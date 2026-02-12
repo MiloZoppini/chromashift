@@ -421,11 +421,44 @@
             .lb-name { max-width: 80px; }
             /* Name input */
             #player-name { width: min(200px, 60vw); font-size: 13px; padding: 8px 14px; }
-            /* Announcements — shift down to center of actual play area */
-            #level-up-text { font-size: 22px; letter-spacing: 6px; top: 42%; }
-            #new-color-text { font-size: 14px; letter-spacing: 4px; top: 38%; }
-            #combo-tier-text { letter-spacing: 5px; top: 42%; }
-            #combo-multiplier { font-size: 13px; letter-spacing: 3px; top: 48%; }
+            /* Announcements — move below play area, above color HUD */
+            #level-up-text { font-size: 22px; letter-spacing: 6px; top: auto; bottom: calc(280px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 0) scale(0.5); }
+            #level-up-text.show { animation: lvlTextMobile 1.2s cubic-bezier(0.16,1,0.3,1) forwards; }
+            #new-color-text { font-size: 14px; letter-spacing: 4px; top: auto; bottom: calc(290px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 0) scale(0.5); }
+            #new-color-text.show { animation: newColorAnimMobile 1.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+            #combo-tier-text { letter-spacing: 5px; top: auto; bottom: calc(300px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 0) scale(0.5); }
+            #combo-tier-text.show { animation: comboTierAnimMobile 1.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+            #combo-multiplier { font-size: 13px; letter-spacing: 3px; top: auto; bottom: calc(270px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(0); }
+            #combo-multiplier.show { animation: comboMultAnimMobile 1.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+        }
+
+        /* Mobile announcement animations (bottom-anchored) */
+        @keyframes lvlTextMobile {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+            12% { opacity: 1; transform: translate(-50%, 0) scale(1.15); }
+            25% { transform: translate(-50%, 0) scale(1); }
+            65% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -10px) scale(1); }
+        }
+        @keyframes newColorAnimMobile {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(0.5); }
+            10% { opacity: 1; transform: translate(-50%, 0) scale(1.1); }
+            20% { transform: translate(-50%, 0) scale(1); }
+            60% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -10px) scale(1); }
+        }
+        @keyframes comboTierAnimMobile {
+            0% { opacity: 0; transform: translate(-50%, 0) scale(0.3); }
+            8% { opacity: 1; transform: translate(-50%, 0) scale(1.2); }
+            18% { transform: translate(-50%, 0) scale(1); }
+            55% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%, -10px) scale(1); }
+        }
+        @keyframes comboMultAnimMobile {
+            0% { opacity: 0; transform: translateX(-50%) translateY(5px); }
+            12% { opacity: 0.8; transform: translateX(-50%) translateY(0); }
+            55% { opacity: 0.8; }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-5px); }
         }
 
         /* Extra small screens (iPhone SE, etc.) */
