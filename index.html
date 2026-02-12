@@ -208,6 +208,73 @@
         .stat-val { font-size: 22px; font-weight: 700; }
         .stat-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #333; }
 
+        /* ====== LEADERBOARD ====== */
+        #leaderboard {
+            margin-top: 14px; width: 320px; max-height: 220px; overflow: hidden;
+        }
+
+        #leaderboard h3 {
+            font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+            color: #333; margin-bottom: 8px; text-align: center;
+        }
+
+        .lb-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 12px; border-radius: 8px; margin-bottom: 3px;
+            font-size: 12px; transition: background 0.2s;
+        }
+
+        .lb-row:nth-child(2) { background: rgba(255,217,61,0.06); }
+        .lb-row:nth-child(3) { background: rgba(255,255,255,0.03); }
+        .lb-row:nth-child(4) { background: rgba(255,255,255,0.02); }
+
+        .lb-row.current { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); }
+
+        .lb-rank { color: #444; font-weight: 700; width: 24px; }
+        .lb-rank.gold { color: #ffd93d; }
+        .lb-rank.silver { color: #aaa; }
+        .lb-rank.bronze { color: #cd7f32; }
+        .lb-name { flex: 1; color: #888; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .lb-score { font-weight: 700; color: #fff; margin-left: 12px; }
+        .lb-level { font-size: 10px; color: #444; margin-left: 8px; }
+
+        /* Name input */
+        #name-input-row {
+            display: none; flex-direction: column; align-items: center; gap: 8px; margin-top: 8px;
+        }
+
+        #name-input-row label {
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #444;
+        }
+
+        #player-name {
+            width: 200px; padding: 10px 16px; border-radius: 10px;
+            border: 1px solid #1a1a1a; background: #0a0a0c; color: #fff;
+            font-family: inherit; font-size: 14px; text-align: center;
+            letter-spacing: 2px; outline: none; transition: border-color 0.2s;
+        }
+
+        #player-name:focus { border-color: #333; }
+        #player-name::placeholder { color: #2a2a2a; }
+
+        /* New color announcement */
+        #new-color-text {
+            position: fixed; top: 42%; left: 50%;
+            transform: translate(-50%,-50%) scale(0.5);
+            font-size: 18px; font-weight: 700; letter-spacing: 6px;
+            text-transform: uppercase; pointer-events: none; z-index: 19; opacity: 0;
+        }
+
+        #new-color-text.show { animation: newColorAnim 1.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+        @keyframes newColorAnim {
+            0% { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
+            10% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
+            20% { transform: translate(-50%,-50%) scale(1); }
+            60% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%,-55%) scale(1); }
+        }
+
         /* ====== VOLUME ====== */
         #vol-btn {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
@@ -287,6 +354,7 @@
 <canvas id="game"></canvas>
 <div id="level-flash"></div>
 <div id="level-up-text"></div>
+<div id="new-color-text"></div>
 <button id="vol-btn" title="Toggle Sound">♫</button>
 
 <div id="hud">
@@ -348,6 +416,11 @@
         <div class="stat"><span class="stat-val" id="stat-combo">0</span><span class="stat-label">Max Combo</span></div>
     </div>
     <div id="death-msg"></div>
+    <div id="name-input-row">
+        <label>Il tuo nome</label>
+        <input type="text" id="player-name" placeholder="AAA" maxlength="12" autocomplete="off" spellcheck="false">
+    </div>
+    <div id="leaderboard"><h3>Classifica</h3></div>
     <button class="btn" id="restart-btn">Riprova</button>
 </div>
 
@@ -853,6 +926,60 @@
     const hintEl = document.getElementById('hint-text');
     const levelFlash = document.getElementById('level-flash');
     const levelUpText = document.getElementById('level-up-text');
+    const newColorText = document.getElementById('new-color-text');
+    const leaderboardEl = document.getElementById('leaderboard');
+    const nameInputRow = document.getElementById('name-input-row');
+    const playerNameInput = document.getElementById('player-name');
+
+    // ============================================================
+    //  LEADERBOARD (localStorage)
+    // ============================================================
+    const LB_KEY = 'cs3_leaderboard';
+    const LB_MAX = 10;
+
+    function getLeaderboard() {
+        try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; }
+        catch { return []; }
+    }
+
+    function saveToLeaderboard(name, sc, lvl, mc) {
+        const lb = getLeaderboard();
+        lb.push({ name: name || 'AAA', score: sc, level: lvl, maxCombo: mc, date: Date.now() });
+        lb.sort((a, b) => b.score - a.score);
+        if (lb.length > LB_MAX) lb.length = LB_MAX;
+        localStorage.setItem(LB_KEY, JSON.stringify(lb));
+        return lb;
+    }
+
+    function renderLeaderboard(currentScore) {
+        const lb = getLeaderboard();
+        if (lb.length === 0) { leaderboardEl.style.display = 'none'; return; }
+        leaderboardEl.style.display = 'block';
+        let html = '<h3>Classifica</h3>';
+        lb.forEach((e, i) => {
+            const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            const isCurrent = (e.score === currentScore && e.date && Date.now() - e.date < 3000);
+            html += `<div class="lb-row${isCurrent ? ' current' : ''}">
+                <span class="lb-rank ${rankClass}">${i + 1}</span>
+                <span class="lb-name">${escHtml(e.name)}</span>
+                <span class="lb-score">${e.score}</span>
+                <span class="lb-level">Lv.${e.level}</span>
+            </div>`;
+        });
+        leaderboardEl.innerHTML = html;
+    }
+
+    function isLeaderboardWorthy(sc) {
+        const lb = getLeaderboard();
+        return lb.length < LB_MAX || sc > (lb[lb.length - 1]?.score || 0);
+    }
+
+    function escHtml(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Restore last used name
+    let lastPlayerName = localStorage.getItem('cs3_name') || '';
 
     // ============================================================
     //  RESIZE
@@ -1346,6 +1473,16 @@
                 regenerateCells();
                 cellMap.set(playerGX + ',' + playerGY, playerColor);
                 genNextColors();
+
+                // Extra speed spike when new color added — more colors = faster cycling
+                cycleTime = Math.max(MIN_CYCLE, cycleTime - 120);
+
+                // Announce new color
+                newColorText.textContent = '+1 COLORE — ' + availableColors + ' COLORI';
+                newColorText.style.color = COLORS[availableColors - 1];
+                newColorText.style.textShadow = `0 0 30px ${COLORS[availableColors - 1]}44`;
+                newColorText.classList.add('show');
+                setTimeout(() => newColorText.classList.remove('show'), 1500);
             }
 
             sndLevelUp();
@@ -1410,6 +1547,18 @@
             document.getElementById('stat-moves').textContent = moveCount;
             document.getElementById('stat-level').textContent = level;
             document.getElementById('stat-combo').textContent = maxCombo;
+
+            // Show name input if leaderboard-worthy
+            if (isLeaderboardWorthy(score) && score > 0) {
+                nameInputRow.style.display = 'flex';
+                playerNameInput.value = lastPlayerName;
+                // Wait a tick so overlay is visible, then focus
+                setTimeout(() => playerNameInput.focus(), 100);
+            } else {
+                nameInputRow.style.display = 'none';
+            }
+
+            renderLeaderboard(-1); // show existing
             gameOverScreen.style.display = 'flex';
         }, 1000);
     }
@@ -1417,7 +1566,18 @@
     // ============================================================
     //  START / RESTART
     // ============================================================
+    function saveScoreIfNeeded() {
+        // Save to leaderboard if name was entered
+        const name = playerNameInput.value.trim();
+        if (name && score > 0 && isLeaderboardWorthy(score)) {
+            lastPlayerName = name;
+            localStorage.setItem('cs3_name', name);
+            saveToLeaderboard(name, score, level, maxCombo);
+        }
+    }
+
     function startGame() {
+        saveScoreIfNeeded();
         initAudio();
         score = 0; level = 1; lives = 3; moveCount = 0;
         combo = 0; maxCombo = 0; availableColors = 3;
@@ -1486,12 +1646,20 @@
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('restart-btn').addEventListener('click', startGame);
 
+    // Enter in name input → save & restart
+    playerNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); startGame(); }
+        // Block game keys while typing
+        e.stopPropagation();
+    });
+
     // ============================================================
     //  INIT
     // ============================================================
     playerColor = 0;
     updateColorUI();
     genNextColors();
+    renderLeaderboard(-1);
     requestAnimationFrame(loop);
 })();
 </script>
