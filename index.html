@@ -275,6 +275,41 @@
             100% { opacity: 0; transform: translate(-50%,-55%) scale(1); }
         }
 
+        /* ====== COMBO TIER ANNOUNCEMENT ====== */
+        #combo-tier-text {
+            position: fixed; top: 38%; left: 50%;
+            transform: translate(-50%,-50%) scale(0.5);
+            font-weight: 900; letter-spacing: 8px;
+            text-transform: uppercase; pointer-events: none;
+            z-index: 19; opacity: 0;
+        }
+
+        #combo-tier-text.show { animation: comboTierAnim 1.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+        @keyframes comboTierAnim {
+            0% { opacity: 0; transform: translate(-50%,-50%) scale(0.3); }
+            8% { opacity: 1; transform: translate(-50%,-50%) scale(1.2); }
+            18% { transform: translate(-50%,-50%) scale(1); }
+            55% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%,-55%) scale(1); }
+        }
+
+        #combo-multiplier {
+            position: fixed; top: 44%; left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px; font-weight: 700; letter-spacing: 4px;
+            pointer-events: none; z-index: 19; opacity: 0;
+        }
+
+        #combo-multiplier.show { animation: comboMultAnim 1.4s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+        @keyframes comboMultAnim {
+            0% { opacity: 0; transform: translateX(-50%) translateY(5px); }
+            12% { opacity: 0.8; transform: translateX(-50%) translateY(0); }
+            55% { opacity: 0.8; }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-5px); }
+        }
+
         /* ====== VOLUME ====== */
         #vol-btn {
             position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
@@ -355,6 +390,8 @@
 <div id="level-flash"></div>
 <div id="level-up-text"></div>
 <div id="new-color-text"></div>
+<div id="combo-tier-text"></div>
+<div id="combo-multiplier"></div>
 <button id="vol-btn" title="Toggle Sound">♫</button>
 
 <div id="hud">
@@ -414,6 +451,7 @@
         <div class="stat"><span class="stat-val" id="stat-moves">0</span><span class="stat-label">Mosse</span></div>
         <div class="stat"><span class="stat-val" id="stat-level">1</span><span class="stat-label">Livello</span></div>
         <div class="stat"><span class="stat-val" id="stat-combo">0</span><span class="stat-label">Max Combo</span></div>
+        <div class="stat"><span class="stat-val" id="stat-mult">x1</span><span class="stat-label">Max Mult</span></div>
     </div>
     <div id="death-msg"></div>
     <div id="name-input-row">
@@ -614,6 +652,41 @@
         o2.connect(g2);
         send(g2);
         o2.start(t + 0.03); o2.stop(t + 0.12);
+    }
+
+    // ---- SOUND: Combo tier milestone (fanfare) ----
+    function sndComboTier(tierIndex) {
+        if (!ac || muted) return;
+        const t = ac.currentTime;
+        // Rising chord — more notes for higher tiers
+        const baseFreq = 400 + tierIndex * 80;
+        const noteCount = 2 + tierIndex;
+        for (let i = 0; i < noteCount; i++) {
+            const delay = i * 0.06;
+            const freq = baseFreq * Math.pow(1.25, i); // major third intervals
+            const o = ac.createOscillator();
+            o.type = 'sine';
+            o.frequency.value = freq;
+            const g = ac.createGain();
+            g.gain.setValueAtTime(0.14 - i * 0.01, t + delay);
+            g.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.4);
+            o.connect(g);
+            send(g);
+            o.start(t + delay); o.stop(t + delay + 0.4);
+        }
+        // Shimmer noise
+        const bufLen = ac.sampleRate * 0.15;
+        const nb = ac.createBuffer(1, bufLen, ac.sampleRate);
+        const nd = nb.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) nd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 2);
+        const ns = ac.createBufferSource();
+        ns.buffer = nb;
+        const nf = ac.createBiquadFilter();
+        nf.type = 'bandpass'; nf.frequency.value = 4000 + tierIndex * 1000; nf.Q.value = 2;
+        const ng = ac.createGain();
+        ng.gain.setValueAtTime(0.04, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        ns.connect(nf); nf.connect(ng); send(ng);
+        ns.start(t); ns.stop(t + 0.15);
     }
 
     // ---- SOUND: Hurt ----
@@ -873,9 +946,18 @@
 
     const COLORS = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#e056a0','#ff9f43'];
 
-    const BASE_CYCLE = 2200;
-    const MIN_CYCLE  = 650;
-    const CYCLE_DEC  = 55;
+    const BASE_CYCLE = 2400;   // more generous start
+    const MIN_CYCLE  = 700;    // floor slightly higher
+    const CYCLE_DEC  = 40;     // gentler ramp (was 55)
+
+    // Combo milestone thresholds & multipliers
+    const COMBO_TIERS = [
+        { at: 5,  label: 'GOOD',         mult: 1.5, color: '#6bcb77' },
+        { at: 10, label: 'GREAT',        mult: 2.0, color: '#4d96ff' },
+        { at: 20, label: 'FIRE',         mult: 3.0, color: '#ff9f43' },
+        { at: 35, label: 'UNSTOPPABLE',  mult: 4.0, color: '#e056a0' },
+        { at: 50, label: 'LEGENDARY',    mult: 5.0, color: '#ffd93d' },
+    ];
 
     // ============================================================
     //  STATE
@@ -927,6 +1009,8 @@
     const levelFlash = document.getElementById('level-flash');
     const levelUpText = document.getElementById('level-up-text');
     const newColorText = document.getElementById('new-color-text');
+    const comboTierText = document.getElementById('combo-tier-text');
+    const comboMultiplier = document.getElementById('combo-multiplier');
     const leaderboardEl = document.getElementById('leaderboard');
     const nameInputRow = document.getElementById('name-input-row');
     const playerNameInput = document.getElementById('player-name');
@@ -1478,10 +1562,22 @@
             combo++;
             if (combo > maxCombo) maxCombo = combo;
 
+            // Determine current combo tier multiplier
+            let currentMult = 1;
+            let currentTierIdx = -1;
+            for (let t = COMBO_TIERS.length - 1; t >= 0; t--) {
+                if (combo >= COMBO_TIERS[t].at) {
+                    currentMult = COMBO_TIERS[t].mult;
+                    currentTierIdx = t;
+                    break;
+                }
+            }
+
+            // Base score + time bonus, then apply multiplier
             const elapsed = performance.now() - cycleStart;
             const timeBonus = Math.max(0, Math.floor((1 - elapsed / cycleTime) * 5));
-            const comboBonus = Math.min(combo, 25);
-            const pts = 1 + timeBonus + Math.floor(comboBonus / 3);
+            const basePts = 1 + timeBonus;
+            const pts = Math.round(basePts * currentMult);
             score += pts;
             scoreEl.textContent = score;
             scoreEl.classList.add('bump');
@@ -1490,22 +1586,58 @@
             // Float text
             const wx2 = playerGX * STRIDE + CELL / 2;
             const wy2 = playerGY * STRIDE + CELL / 2;
-            if (pts > 2) spawnFloat('+' + pts, wx2, wy2 - CELL / 2, COLORS[playerColor]);
+            const floatColor = currentTierIdx >= 0 ? COMBO_TIERS[currentTierIdx].color : COLORS[playerColor];
+            if (pts > 1) spawnFloat('+' + pts, wx2, wy2 - CELL / 2, floatColor);
 
-            // Combo UI
-            if (combo >= 5) {
-                comboText.textContent = `COMBO x${combo}`;
+            // Check if we just crossed a combo tier threshold
+            for (let t = 0; t < COMBO_TIERS.length; t++) {
+                if (combo === COMBO_TIERS[t].at) {
+                    // Tier milestone reached!
+                    const tier = COMBO_TIERS[t];
+                    comboTierText.textContent = tier.label;
+                    comboTierText.style.color = tier.color;
+                    comboTierText.style.textShadow = `0 0 40px ${tier.color}66`;
+                    comboTierText.style.fontSize = (24 + t * 4) + 'px';
+                    comboTierText.classList.remove('show');
+                    void comboTierText.offsetWidth; // reflow
+                    comboTierText.classList.add('show');
+
+                    comboMultiplier.textContent = 'x' + tier.mult + ' PUNTI';
+                    comboMultiplier.style.color = tier.color;
+                    comboMultiplier.classList.remove('show');
+                    void comboMultiplier.offsetWidth;
+                    comboMultiplier.classList.add('show');
+
+                    setTimeout(() => {
+                        comboTierText.classList.remove('show');
+                        comboMultiplier.classList.remove('show');
+                    }, 1400);
+
+                    sndComboTier(t);
+                    screenFlash = 0.6;
+                    screenFlashColor = tier.color;
+                    spawnP(wx2, wy2, tier.color, 15 + t * 5, 1.2);
+                    break;
+                }
+            }
+
+            // Combo counter UI (always shows current streak)
+            if (combo >= 3) {
+                const tierLabel = currentTierIdx >= 0 ? COMBO_TIERS[currentTierIdx].label + ' ' : '';
+                comboText.textContent = tierLabel + 'x' + combo;
+                comboText.style.color = currentTierIdx >= 0 ? COMBO_TIERS[currentTierIdx].color : '#ffd93d';
                 comboText.classList.add('visible');
                 comboText.classList.add('pop');
                 setTimeout(() => comboText.classList.remove('pop'), 120);
-                if (combo % 5 === 0) sndCombo(combo);
             } else {
                 comboText.classList.remove('visible');
             }
         } else {
             // Revisiting a cell — reset combo, no points
-            combo = 0;
-            comboText.classList.remove('visible');
+            if (combo > 0) {
+                combo = 0;
+                comboText.classList.remove('visible');
+            }
         }
 
         // Squash/stretch
@@ -1538,8 +1670,8 @@
                 cellMap.set(playerGX + ',' + playerGY, playerColor);
                 genNextColors();
 
-                // Extra speed spike when new color added — more colors = faster cycling
-                cycleTime = Math.max(MIN_CYCLE, cycleTime - 120);
+                // Speed spike when new color added (gentler: -80ms instead of -120)
+                cycleTime = Math.max(MIN_CYCLE, cycleTime - 80);
 
                 // Announce new color
                 newColorText.textContent = '+1 COLORE — ' + availableColors + ' COLORI';
@@ -1611,6 +1743,13 @@
             document.getElementById('stat-moves').textContent = moveCount;
             document.getElementById('stat-level').textContent = level;
             document.getElementById('stat-combo').textContent = maxCombo;
+
+            // Find best multiplier reached
+            let bestMult = 1;
+            for (let t = COMBO_TIERS.length - 1; t >= 0; t--) {
+                if (maxCombo >= COMBO_TIERS[t].at) { bestMult = COMBO_TIERS[t].mult; break; }
+            }
+            document.getElementById('stat-mult').textContent = 'x' + bestMult;
 
             // Show name input if leaderboard-worthy
             if (isLeaderboardWorthy(score) && score > 0) {
