@@ -1275,29 +1275,45 @@
         }
 
         // --- VALID MOVE ---
+        const destKey = nx + ',' + ny;
+        const isNewCell = !trail.has(destKey);
+
         trail.add(playerGX + ',' + playerGY);
         playerGX = nx; playerGY = ny;
-        moveCount++; combo++;
-        if (combo > maxCombo) maxCombo = combo;
+        moveCount++;
 
-        // Score
-        const elapsed = performance.now() - cycleStart;
-        const timeBonus = Math.max(0, Math.floor((1 - elapsed / cycleTime) * 5));
-        const comboBonus = Math.min(combo, 25);
-        const pts = 1 + timeBonus + Math.floor(comboBonus / 3);
-        score += pts;
-        scoreEl.textContent = score;
-        scoreEl.classList.add('bump');
-        setTimeout(() => scoreEl.classList.remove('bump'), 80);
+        if (isNewCell) {
+            // Only score & combo on NEW cells
+            combo++;
+            if (combo > maxCombo) maxCombo = combo;
 
-        // Combo UI
-        if (combo >= 5) {
-            comboText.textContent = `COMBO x${combo}`;
-            comboText.classList.add('visible');
-            comboText.classList.add('pop');
-            setTimeout(() => comboText.classList.remove('pop'), 120);
-            if (combo % 5 === 0) sndCombo(combo);
+            const elapsed = performance.now() - cycleStart;
+            const timeBonus = Math.max(0, Math.floor((1 - elapsed / cycleTime) * 5));
+            const comboBonus = Math.min(combo, 25);
+            const pts = 1 + timeBonus + Math.floor(comboBonus / 3);
+            score += pts;
+            scoreEl.textContent = score;
+            scoreEl.classList.add('bump');
+            setTimeout(() => scoreEl.classList.remove('bump'), 80);
+
+            // Float text
+            const wx2 = playerGX * STRIDE + CELL / 2;
+            const wy2 = playerGY * STRIDE + CELL / 2;
+            if (pts > 2) spawnFloat('+' + pts, wx2, wy2 - CELL / 2, COLORS[playerColor]);
+
+            // Combo UI
+            if (combo >= 5) {
+                comboText.textContent = `COMBO x${combo}`;
+                comboText.classList.add('visible');
+                comboText.classList.add('pop');
+                setTimeout(() => comboText.classList.remove('pop'), 120);
+                if (combo % 5 === 0) sndCombo(combo);
+            } else {
+                comboText.classList.remove('visible');
+            }
         } else {
+            // Revisiting a cell — reset combo, no points
+            combo = 0;
             comboText.classList.remove('visible');
         }
 
@@ -1311,12 +1327,10 @@
         }
         setTimeout(() => { playerScaleTarget = 1; }, 70);
 
-        // FX
+        // FX — always play move sound & trail particles
         const wx = playerGX * STRIDE + CELL / 2;
         const wy = playerGY * STRIDE + CELL / 2;
         spawnTrailP(wx, wy, COLORS[playerColor]);
-        if (pts > 2) spawnFloat('+' + pts, wx, wy - CELL / 2, COLORS[playerColor]);
-
         sndMove(playerColor, dir);
 
         // Level up
