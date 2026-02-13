@@ -358,6 +358,109 @@
             100% { opacity: 0; transform: translate(-50%,-55%) scale(1); }
         }
 
+        /* ====== MODE SELECT ====== */
+        .mode-select { display: flex; gap: 12px; margin-top: 10px; }
+
+        .mode-btn {
+            padding: 14px 28px; border-radius: 12px;
+            border: 1px solid #1a1a1a; background: #0a0a0c;
+            color: #555; font-family: inherit; font-size: 12px;
+            font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+            cursor: pointer; transition: all 0.25s; position: relative;
+        }
+
+        .mode-btn:hover { border-color: #333; color: #999; transform: translateY(-2px); }
+        .mode-btn.selected { border-color: #4d96ff; color: #4d96ff; background: rgba(77,150,255,0.05); }
+
+        .mode-desc {
+            font-size: 10px; color: #2a2a2a; letter-spacing: 2px;
+            text-transform: uppercase; margin-top: 4px; transition: color 0.3s;
+        }
+
+        /* ====== ESCAPE HUD ====== */
+        #escape-hud {
+            position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+            padding: 16px 24px; display: none; flex-direction: column;
+            align-items: center; gap: 4px; pointer-events: none; z-index: 11;
+        }
+
+        #moves-left {
+            font-size: 28px; font-weight: 900; letter-spacing: 1px;
+            transition: transform 0.08s, color 0.2s;
+        }
+
+        #moves-left.bump { transform: scale(1.2); }
+        #moves-left.low { color: #ff6b6b; }
+
+        #moves-label {
+            font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: #333;
+        }
+
+        #room-display {
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #444;
+            margin-top: 2px;
+        }
+
+        #exit-arrow {
+            position: fixed; pointer-events: none; z-index: 12;
+            width: 40px; height: 40px; opacity: 0; transition: opacity 0.3s;
+        }
+
+        /* ====== ESCAPE ANNOUNCEMENTS ====== */
+        #escape-event-text {
+            position: fixed; top: 38%; left: 50%;
+            transform: translate(-50%,-50%) scale(0.5);
+            font-weight: 900; letter-spacing: 6px;
+            text-transform: uppercase; pointer-events: none;
+            z-index: 19; opacity: 0;
+        }
+
+        #escape-event-text.show { animation: escEventAnim 1.6s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+        @keyframes escEventAnim {
+            0% { opacity: 0; transform: translate(-50%,-50%) scale(0.3); }
+            8% { opacity: 1; transform: translate(-50%,-50%) scale(1.15); }
+            18% { transform: translate(-50%,-50%) scale(1); }
+            55% { opacity: 1; }
+            100% { opacity: 0; transform: translate(-50%,-55%) scale(1); }
+        }
+
+        #rush-timer-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; height: 4px;
+            background: transparent; z-index: 18; pointer-events: none;
+        }
+
+        #rush-timer-fill {
+            height: 100%; width: 100%; background: linear-gradient(90deg, #ffd93d, #ff9f43);
+            transform-origin: left; transition: transform 0.1s linear;
+            box-shadow: 0 0 10px rgba(255,217,61,0.4);
+        }
+
+        /* ====== COLOR SWITCH OVERLAY ====== */
+        #color-switch-overlay {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            display: none; flex-direction: column; align-items: center; gap: 12px;
+            pointer-events: none; z-index: 19;
+        }
+
+        #cs-sequence {
+            display: flex; gap: 8px; align-items: center;
+        }
+
+        .cs-dot {
+            width: 32px; height: 32px; border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: transform 0.2s, border-color 0.2s, opacity 0.2s;
+        }
+
+        .cs-dot.active { border-color: #fff; transform: scale(1.2); }
+        .cs-dot.done { opacity: 0.3; transform: scale(0.8); }
+
+        #cs-timer {
+            font-size: 11px; letter-spacing: 3px; color: #555;
+            text-transform: uppercase;
+        }
+
         /* ====== MOBILE D-PAD ====== */
         #mobile-dpad {
             display: none; position: fixed;
@@ -386,6 +489,11 @@
         @media (max-width: 768px), (pointer: coarse) {
             #mobile-dpad { display: block; }
             #hint-text { display: none; }
+            #escape-hud { padding: 10px 16px; }
+            #moves-left { font-size: 22px; }
+            #room-display { font-size: 9px; }
+            .mode-select { flex-direction: column; gap: 8px; }
+            .mode-btn { padding: 10px 20px; font-size: 11px; }
             #color-hud {
                 bottom: calc(200px + env(safe-area-inset-bottom, 0px));
                 gap: 12px;
@@ -517,6 +625,23 @@
 <div id="combo-multiplier"></div>
 <button id="vol-btn" title="Toggle Sound">♫</button>
 
+<div id="escape-hud">
+    <div id="moves-left">25</div>
+    <div id="moves-label">Mosse</div>
+    <div id="room-display">Stanza 1</div>
+</div>
+
+<div id="escape-event-text"></div>
+
+<div id="rush-timer-bar"><div id="rush-timer-fill" style="transform:scaleX(0)"></div></div>
+
+<div id="color-switch-overlay">
+    <div id="cs-sequence"></div>
+    <div id="cs-timer"></div>
+</div>
+
+<canvas id="exit-arrow" width="40" height="40"></canvas>
+
 <div id="hud">
     <div id="hud-left">
         <div id="title">ChromaShift</div>
@@ -556,12 +681,17 @@
 <div class="overlay" id="start-screen">
     <h1>ChromaShift</h1>
     <div class="subtitle">color survival</div>
-    <p>
+    <p id="mode-instructions">
         Il tuo quadrato <strong>cambia colore</strong> automaticamente.<br>
         Puoi muoverti <strong>solo sulle celle</strong> del tuo stesso colore.<br>
         Colore sbagliato = <strong>perdi una vita</strong>.<br>
         Sopravvivi il piu a lungo possibile.
     </p>
+    <div class="mode-select">
+        <button class="mode-btn selected" id="mode-arcade" data-mode="arcade">Arcade</button>
+        <button class="mode-btn" id="mode-escape" data-mode="escape">Escape</button>
+    </div>
+    <div class="mode-desc" id="mode-desc">Sopravvivi il piu a lungo possibile</div>
     <button class="btn" id="start-btn">Gioca</button>
 </div>
 
@@ -1060,6 +1190,233 @@
     });
 
     // ============================================================
+    //  MODE SELECTION
+    // ============================================================
+    let gameMode = 'arcade'; // 'arcade' or 'escape'
+
+    const modeArcadeBtn = document.getElementById('mode-arcade');
+    const modeEscapeBtn = document.getElementById('mode-escape');
+    const modeDesc = document.getElementById('mode-desc');
+    const modeInstructions = document.getElementById('mode-instructions');
+
+    const MODE_DESCS = {
+        arcade: 'Sopravvivi il piu a lungo possibile',
+        escape: 'Trova l\'uscita con mosse limitate',
+    };
+    const MODE_INSTRUCTIONS = {
+        arcade: 'Il tuo quadrato <strong>cambia colore</strong> automaticamente.<br>Puoi muoverti <strong>solo sulle celle</strong> del tuo stesso colore.<br>Colore sbagliato = <strong>perdi una vita</strong>.<br>Sopravvivi il piu a lungo possibile.',
+        escape: 'Hai un numero <strong>limitato di mosse</strong> per raggiungere l\'uscita.<br>Colore sbagliato = <strong>-3 mosse</strong>.<br>Celle speciali: <strong>⚡ Rush</strong>, <strong>🔄 Sequenza</strong>, <strong>💎 Shortcut</strong>.<br>Quante stanze riesci a superare?',
+    };
+
+    [modeArcadeBtn, modeEscapeBtn].forEach(btn => {
+        btn.addEventListener('click', () => {
+            gameMode = btn.dataset.mode;
+            modeArcadeBtn.classList.toggle('selected', gameMode === 'arcade');
+            modeEscapeBtn.classList.toggle('selected', gameMode === 'escape');
+            modeDesc.textContent = MODE_DESCS[gameMode];
+            modeInstructions.innerHTML = MODE_INSTRUCTIONS[gameMode];
+        });
+    });
+
+    // ============================================================
+    //  ESCAPE MODE — STATE & CONSTANTS
+    // ============================================================
+    const ESC_BASE_MOVES = 25;
+    const ESC_MOVE_DEC = 1;         // moves decrease per room
+    const ESC_MIN_MOVES = 12;
+    const ESC_WRONG_PENALTY = 3;
+    const ESC_EXIT_BASE_DIST = 6;   // exit distance room 1
+    const ESC_EXIT_DIST_INC = 1.5;  // distance increase per room
+
+    let escMovesLeft = 0;
+    let escRoom = 0;
+    let escExitGX = 0, escExitGY = 0;
+    let escSpecialCells = new Map(); // key -> {type:'rush'|'switch'|'shortcut', used:false}
+    let escRushActive = false, escRushEnd = 0;
+    let escSwitchActive = false, escSwitchSeq = [], escSwitchIdx = 0, escSwitchEnd = 0;
+    let escScore = 0;
+    let escRoomsCleared = 0;
+    let escTotalMovesMade = 0;
+
+    // DOM for escape
+    const escHud = document.getElementById('escape-hud');
+    const movesLeftEl = document.getElementById('moves-left');
+    const movesLabel = document.getElementById('moves-label');
+    const roomDisplay = document.getElementById('room-display');
+    const escEventText = document.getElementById('escape-event-text');
+    const rushTimerFill = document.getElementById('rush-timer-fill');
+    const rushTimerBar = document.getElementById('rush-timer-bar');
+    const csSwitchOverlay = document.getElementById('color-switch-overlay');
+    const csSequenceEl = document.getElementById('cs-sequence');
+    const csTimerEl = document.getElementById('cs-timer');
+    const exitArrowCanvas = document.getElementById('exit-arrow');
+    const exitArrowCtx = exitArrowCanvas.getContext('2d');
+
+    function escUpdateMovesUI() {
+        movesLeftEl.textContent = escMovesLeft;
+        movesLeftEl.classList.toggle('low', escMovesLeft <= 5);
+        movesLeftEl.classList.add('bump');
+        setTimeout(() => movesLeftEl.classList.remove('bump'), 80);
+    }
+
+    function escShowEvent(text, color, size) {
+        escEventText.textContent = text;
+        escEventText.style.color = color;
+        escEventText.style.fontSize = (size || 22) + 'px';
+        escEventText.style.textShadow = `0 0 40px ${color}66`;
+        escEventText.classList.remove('show');
+        void escEventText.offsetWidth;
+        escEventText.classList.add('show');
+        setTimeout(() => escEventText.classList.remove('show'), 1600);
+    }
+
+    // Place exit at random walkable position at given distance
+    function escPlaceExit(room) {
+        const dist = Math.round(ESC_EXIT_BASE_DIST + (room - 1) * ESC_EXIT_DIST_INC);
+        // Pick random direction and walk dist cells
+        const angle = Math.random() * Math.PI * 2;
+        escExitGX = playerGX + Math.round(Math.cos(angle) * dist);
+        escExitGY = playerGY + Math.round(Math.sin(angle) * dist);
+    }
+
+    // Place special cells around the path between player and exit
+    function escPlaceSpecials(room) {
+        escSpecialCells.clear();
+        const count = Math.min(3, 1 + Math.floor(room / 2)); // 1-3 specials
+        const types = ['rush', 'switch', 'shortcut'];
+        for (let i = 0; i < count; i++) {
+            // Random position between player and exit, offset randomly
+            const t = 0.2 + Math.random() * 0.6;
+            const bx = Math.round(playerGX + (escExitGX - playerGX) * t + (Math.random() - 0.5) * 6);
+            const by = Math.round(playerGY + (escExitGY - playerGY) * t + (Math.random() - 0.5) * 6);
+            const key = bx + ',' + by;
+            // Don't place on player or exit
+            if (key === playerGX + ',' + playerGY || key === escExitGX + ',' + escExitGY) continue;
+            if (escSpecialCells.has(key)) continue;
+            escSpecialCells.set(key, { type: types[i % types.length], used: false, gx: bx, gy: by });
+        }
+    }
+
+    function escStartRoom(room) {
+        escRoom = room;
+        escMovesLeft = Math.max(ESC_MIN_MOVES, ESC_BASE_MOVES - (room - 1) * ESC_MOVE_DEC);
+        escPlaceExit(room);
+        escPlaceSpecials(room);
+        escRushActive = false;
+        escSwitchActive = false;
+        roomDisplay.textContent = 'Stanza ' + room;
+        escUpdateMovesUI();
+
+        if (room > 1) {
+            escShowEvent('STANZA ' + room, '#4d96ff', 26);
+            sndLevelUp();
+            screenFlash = 0.8; screenFlashColor = '#4d96ff';
+        }
+    }
+
+    // Rush event: 5s free movement (no move cost)
+    function escActivateRush() {
+        escRushActive = true;
+        escRushEnd = performance.now() + 5000;
+        escShowEvent('⚡ RUSH!', '#ffd93d', 28);
+        sndComboTier(2);
+        screenFlash = 0.5; screenFlashColor = '#ffd93d';
+    }
+
+    // Color Switch event: match a sequence of colors for +5 moves
+    function escActivateSwitch() {
+        const seqLen = Math.min(5, 3 + Math.floor(escRoom / 3));
+        escSwitchSeq = [];
+        for (let i = 0; i < seqLen; i++) {
+            escSwitchSeq.push(Math.floor(Math.random() * availableColors));
+        }
+        escSwitchIdx = 0;
+        escSwitchActive = true;
+        escSwitchEnd = performance.now() + (seqLen * 1500 + 1000);
+        escShowEvent('🔄 SEQUENZA!', '#6bcb77', 24);
+        sndComboTier(1);
+        escUpdateSwitchUI();
+        csSwitchOverlay.style.display = 'flex';
+    }
+
+    function escUpdateSwitchUI() {
+        let html = '';
+        for (let i = 0; i < escSwitchSeq.length; i++) {
+            const cls = i < escSwitchIdx ? 'done' : i === escSwitchIdx ? 'active' : '';
+            html += `<div class="cs-dot ${cls}" style="background:${COLORS[escSwitchSeq[i]]}"></div>`;
+        }
+        csSequenceEl.innerHTML = html;
+    }
+
+    // Shortcut: teleport closer to exit
+    function escActivateShortcut() {
+        const dx = escExitGX - playerGX;
+        const dy = escExitGY - playerGY;
+        // Teleport 60% closer
+        const newGX = playerGX + Math.round(dx * 0.6);
+        const newGY = playerGY + Math.round(dy * 0.6);
+        // Make sure destination cell matches player color
+        cellMap.set(newGX + ',' + newGY, playerColor);
+        playerGX = newGX;
+        playerGY = newGY;
+        escShowEvent('💎 SHORTCUT!', '#e056a0', 26);
+        sndComboTier(3);
+        screenFlash = 0.6; screenFlashColor = '#e056a0';
+        spawnP(playerGX * STRIDE + CELL / 2, playerGY * STRIDE + CELL / 2, '#e056a0', 25, 1.5);
+    }
+
+    // Escape sounds
+    function sndEscPortal() {
+        if (!ac || muted) return;
+        const t = ac.currentTime;
+        // Shimmering ascending tone
+        for (let i = 0; i < 4; i++) {
+            const o = ac.createOscillator();
+            o.type = 'sine';
+            o.frequency.value = 400 + i * 150;
+            const g = ac.createGain();
+            g.gain.setValueAtTime(0.08, t + i * 0.05);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.05 + 0.3);
+            o.connect(g); send(g);
+            o.start(t + i * 0.05); o.stop(t + i * 0.05 + 0.3);
+        }
+    }
+
+    function sndEscNoMoves() {
+        if (!ac || muted) return;
+        const t = ac.currentTime;
+        // Descending sad tone
+        const notes = [300, 250, 180];
+        notes.forEach((f, i) => {
+            const o = ac.createOscillator();
+            o.type = 'triangle';
+            o.frequency.value = f;
+            const g = ac.createGain();
+            g.gain.setValueAtTime(0.12, t + i * 0.15);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.15 + 0.3);
+            o.connect(g); send(g);
+            o.start(t + i * 0.15); o.stop(t + i * 0.15 + 0.3);
+        });
+    }
+
+    function sndEscRoomClear() {
+        if (!ac || muted) return;
+        const t = ac.currentTime;
+        // Triumphant ascending chord
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((f, i) => {
+            const o = ac.createOscillator();
+            o.type = 'sine';
+            o.frequency.value = f;
+            const g = ac.createGain();
+            g.gain.setValueAtTime(0.14, t + i * 0.08);
+            g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.5);
+            o.connect(g); send(g);
+            o.start(t + i * 0.08); o.stop(t + i * 0.08 + 0.5);
+        });
+    }
+
+    // ============================================================
     //  GAME CONFIG
     // ============================================================
     // Responsive cell size: smaller on mobile for wider view
@@ -1144,7 +1501,9 @@
     // ============================================================
     //  LEADERBOARD (localStorage)
     // ============================================================
-    const LB_KEY = 'cs3_leaderboard';
+    const LB_KEY_ARCADE = 'cs3_leaderboard';
+    const LB_KEY_ESCAPE = 'cs3_leaderboard_escape';
+    let LB_KEY = LB_KEY_ARCADE;
     const LB_MAX = 10;
 
     function getLeaderboard() {
@@ -1484,6 +1843,73 @@
             }
         }
 
+        // --- ESCAPE: EXIT PORTAL + SPECIAL CELLS ---
+        if (gameMode === 'escape' && gameRunning) {
+            const exSx = escExitGX * STRIDE + ox;
+            const exSy = escExitGY * STRIDE + oy;
+            if (exSx + CELL > -20 && exSx < W + 20 && exSy + CELL > -20 && exSy < H + 20) {
+                const pulse = 0.6 + Math.sin(now * 0.006) * 0.4;
+                const hue = (now * 0.1) % 360;
+                ctx.save();
+                ctx.shadowColor = `hsl(${hue}, 80%, 60%)`;
+                ctx.shadowBlur = 20 * pulse;
+                ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+                rr(ctx, exSx, exSy, CELL, CELL, CELL_R); ctx.fill();
+                ctx.shadowBlur = 10;
+                ctx.fillStyle = `hsla(${hue}, 90%, 70%, ${0.3 + pulse * 0.3})`;
+                rr(ctx, exSx + 6, exSy + 6, CELL - 12, CELL - 12, CELL_R - 2); ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = `rgba(255,255,255,${0.5 + pulse * 0.3})`;
+                ctx.font = `bold ${CELL * 0.45}px 'SF Mono', monospace`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('EXIT', exSx + CELL / 2, exSy + CELL / 2 + 1);
+                ctx.restore();
+            }
+            const edx2 = escExitGX - playerGX, edy2 = escExitGY - playerGY;
+            const eDist2 = Math.sqrt(edx2 * edx2 + edy2 * edy2);
+            if (eDist2 > 3) {
+                const eAngle = Math.atan2(edy2, edx2);
+                const arrowR = Math.min(W, H) * 0.38;
+                const arX = W / 2 + Math.cos(eAngle) * arrowR;
+                const arY = H / 2 + Math.sin(eAngle) * arrowR;
+                exitArrowCanvas.style.opacity = '0.6';
+                exitArrowCanvas.style.left = (arX - 20) + 'px';
+                exitArrowCanvas.style.top = (arY - 20) + 'px';
+                exitArrowCtx.clearRect(0, 0, 40, 40);
+                exitArrowCtx.save();
+                exitArrowCtx.translate(20, 20);
+                exitArrowCtx.rotate(eAngle);
+                exitArrowCtx.beginPath();
+                exitArrowCtx.moveTo(14, 0); exitArrowCtx.lineTo(-6, -8); exitArrowCtx.lineTo(-6, 8);
+                exitArrowCtx.closePath();
+                exitArrowCtx.fillStyle = `hsl(${(now * 0.1) % 360}, 70%, 60%)`;
+                exitArrowCtx.fill();
+                exitArrowCtx.restore();
+            } else {
+                exitArrowCanvas.style.opacity = '0';
+            }
+            for (const [, spec] of escSpecialCells) {
+                if (spec.used) continue;
+                const spSx = spec.gx * STRIDE + ox;
+                const spSy = spec.gy * STRIDE + oy;
+                if (spSx + CELL < -10 || spSx > W + 10 || spSy + CELL < -10 || spSy > H + 10) continue;
+                const spPulse = 0.7 + Math.sin(now * 0.005 + spec.gx) * 0.3;
+                let spCol, spIco;
+                if (spec.type === 'rush') { spCol = '#ffd93d'; spIco = '\u26A1'; }
+                else if (spec.type === 'switch') { spCol = '#6bcb77'; spIco = '\uD83D\uDD04'; }
+                else { spCol = '#e056a0'; spIco = '\uD83D\uDC8E'; }
+                ctx.save();
+                ctx.shadowColor = spCol; ctx.shadowBlur = 12 * spPulse;
+                ctx.strokeStyle = spCol; ctx.lineWidth = 2;
+                rr(ctx, spSx + 2, spSy + 2, CELL - 4, CELL - 4, CELL_R); ctx.stroke();
+                ctx.shadowBlur = 0;
+                ctx.font = `${CELL * 0.4}px sans-serif`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(spIco, spSx + CELL / 2, spSy + CELL / 2);
+                ctx.restore();
+            }
+        }
+
         // --- PLAYER ---
         if (!dying) {
             const psx = playerGX * STRIDE + ox;
@@ -1629,6 +2055,22 @@
         if (gameRunning && !dying) {
             gameTime += dt;
             if (now - cycleStart >= cycleTime) cyclePlayerColor();
+
+            // Escape mode timers
+            if (gameMode === 'escape') {
+                if (escRushActive) {
+                    const remain = (escRushEnd - performance.now()) / 5000;
+                    rushTimerFill.style.transform = `scaleX(${Math.max(0, remain)})`;
+                    if (performance.now() >= escRushEnd) {
+                        escRushActive = false;
+                        rushTimerFill.style.transform = 'scaleX(0)';
+                    }
+                }
+                if (escSwitchActive && performance.now() >= escSwitchEnd) {
+                    escSwitchActive = false;
+                    csSwitchOverlay.style.display = 'none';
+                }
+            }
         }
 
         updateCamera(dt);
@@ -1670,7 +2112,12 @@
 
         const targetColor = getCellColor(nx, ny);
 
-        if (targetColor !== playerColor) {
+        // === ESCAPE MODE: Rush bypasses color check ===
+        if (targetColor !== playerColor && !(gameMode === 'escape' && escRushActive)) {
+            if (gameMode === 'escape') {
+                escHurt(nx, ny);
+                return;
+            }
             hurt(nx, ny);
             return;
         }
@@ -1781,6 +2228,64 @@
         const wy = playerGY * STRIDE + CELL / 2;
         spawnTrailP(wx, wy, COLORS[playerColor]);
         sndMove(playerColor, dir);
+
+        // === ESCAPE MODE LOGIC ===
+        if (gameMode === 'escape') {
+            escTotalMovesMade++;
+
+            // Deduct move (unless Rush is active)
+            if (!escRushActive) {
+                escMovesLeft--;
+                escUpdateMovesUI();
+            }
+
+            // Check exit reached
+            if (playerGX === escExitGX && playerGY === escExitGY) {
+                escRoomCleared();
+                return;
+            }
+
+            // Check special cell
+            const cellKey = playerGX + ',' + playerGY;
+            const special = escSpecialCells.get(cellKey);
+            if (special && !special.used) {
+                special.used = true;
+                if (special.type === 'rush') escActivateRush();
+                else if (special.type === 'switch') escActivateSwitch();
+                else if (special.type === 'shortcut') escActivateShortcut();
+            }
+
+            // Check color switch sequence
+            if (escSwitchActive) {
+                if (playerColor === escSwitchSeq[escSwitchIdx]) {
+                    escSwitchIdx++;
+                    escUpdateSwitchUI();
+                    sndCombo(escSwitchIdx);
+                    if (escSwitchIdx >= escSwitchSeq.length) {
+                        // Sequence complete!
+                        escSwitchActive = false;
+                        csSwitchOverlay.style.display = 'none';
+                        escMovesLeft += 5;
+                        escUpdateMovesUI();
+                        escShowEvent('+5 MOSSE!', '#6bcb77', 24);
+                        sndComboTier(2);
+                        escScore += 50;
+                    }
+                }
+            }
+
+            // Check out of moves
+            if (escMovesLeft <= 0 && !escRushActive) {
+                escGameOver();
+                return;
+            }
+
+            // Escape scoring: +1 per move
+            escScore += 1;
+            score = escScore;
+            scoreEl.textContent = score;
+            return; // Skip arcade level-up logic
+        }
 
         // Level up
         const newLvl = Math.floor(moveCount / 20) + 1;
@@ -1893,6 +2398,118 @@
     }
 
     // ============================================================
+    //  ESCAPE MODE — HURT / ROOM CLEAR / GAME OVER
+    // ============================================================
+    function escHurt(tx, ty) {
+        escMovesLeft = Math.max(0, escMovesLeft - ESC_WRONG_PENALTY);
+        escUpdateMovesUI();
+
+        shakeDecay = 0.8;
+        screenFlash = 0.8; screenFlashColor = '#ff2244';
+
+        const wx = tx * STRIDE + CELL / 2;
+        const wy = ty * STRIDE + CELL / 2;
+        spawnP(wx, wy, '#ff2244', 10, 0.7);
+        spawnFloat('-' + ESC_WRONG_PENALTY, wx, wy - CELL / 2, '#ff6b6b');
+        sndHurt();
+        playerScaleTarget = 0.7;
+        setTimeout(() => { playerScaleTarget = 1; }, 180);
+
+        if (escMovesLeft <= 0) {
+            escGameOver();
+        }
+    }
+
+    function escRoomCleared() {
+        escRoomsCleared++;
+        const moveBonus = escMovesLeft * 5;
+        const roomPts = escRoom * 100 + moveBonus;
+        escScore += roomPts;
+        score = escScore;
+        scoreEl.textContent = score;
+
+        escShowEvent('STANZA COMPLETATA! +' + roomPts, '#6bcb77', 24);
+        sndEscRoomClear();
+        screenFlash = 1; screenFlashColor = '#6bcb77';
+        spawnP(playerGX * STRIDE + CELL / 2, playerGY * STRIDE + CELL / 2, '#6bcb77', 30, 1.5);
+
+        // Increase colors every 3 rooms
+        if (escRoom % 3 === 0 && availableColors < COLORS.length) {
+            availableColors++;
+            cellMap.clear();
+            cellMap.set(playerGX + ',' + playerGY, playerColor);
+            genNextColors();
+        }
+
+        // Start next room after brief delay
+        setTimeout(() => {
+            if (!gameRunning) return;
+            trail.clear();
+            escStartRoom(escRoom + 1);
+        }, 800);
+    }
+
+    function escGameOver() {
+        gameRunning = false;
+        sndEscNoMoves();
+        stopDrone(); stopHeartbeat();
+
+        escHud.style.display = 'none';
+        exitArrowCanvas.style.opacity = '0';
+        csSwitchOverlay.style.display = 'none';
+
+        // Death particles
+        const wx = playerGX * STRIDE + CELL / 2;
+        const wy = playerGY * STRIDE + CELL / 2;
+        spawnP(wx, wy, '#ff2244', 30, 1.5);
+        dying = true; deathTime = performance.now();
+        deathX = playerGX; deathY = playerGY;
+        shakeDecay = 1.5;
+
+        setTimeout(() => {
+            dying = false;
+
+            const escBest = parseInt(localStorage.getItem('cs3_best_escape') || '0');
+            const isNew = escScore > escBest;
+            if (isNew) { localStorage.setItem('cs3_best_escape', escScore); }
+
+            finalScoreEl.textContent = escScore;
+            finalScoreEl.style.color = '#4d96ff';
+            bestScoreTextEl.textContent = 'Best: ' + (parseInt(localStorage.getItem('cs3_best_escape') || '0'));
+            newBestEl.style.display = isNew ? 'block' : 'none';
+            deathMsgEl.textContent = 'Mosse esaurite!';
+            document.getElementById('stat-moves').textContent = escTotalMovesMade;
+            document.getElementById('stat-level').textContent = escRoomsCleared + ' stanze';
+            document.getElementById('stat-combo').textContent = maxCombo;
+            document.getElementById('stat-mult').textContent = escRoom;
+
+            // Update stat labels for escape
+            document.querySelector('#stats-row .stat:nth-child(2) .stat-label').textContent = 'Stanze';
+            document.querySelector('#stats-row .stat:nth-child(4) .stat-label').textContent = 'Ultimo';
+
+            if (isLeaderboardWorthy(escScore) && escScore > 0) {
+                nameInputRow.style.display = 'flex';
+                playerNameInput.value = lastPlayerName;
+                setTimeout(() => playerNameInput.focus(), 100);
+            } else {
+                nameInputRow.style.display = 'none';
+            }
+
+            // Override score for leaderboard save
+            score = escScore;
+            level = escRoomsCleared;
+            renderLeaderboard(-1);
+            gameOverScreen.style.display = 'flex';
+
+            // Restore stat labels for next game
+            setTimeout(() => {
+                document.querySelector('#stats-row .stat:nth-child(2) .stat-label').textContent = 'Livello';
+                document.querySelector('#stats-row .stat:nth-child(4) .stat-label').textContent = 'Max Mult';
+            }, 50);
+        }, 1000);
+    }
+
+    // ============================================================
     //  START / RESTART
     // ============================================================
     function saveScoreIfNeeded() {
@@ -1929,10 +2546,45 @@
         startScreen.style.display = 'none';
         gameOverScreen.style.display = 'none';
 
+        // Set leaderboard key based on mode and reset stat labels
+        LB_KEY = gameMode === 'escape' ? LB_KEY_ESCAPE : LB_KEY_ARCADE;
+        document.querySelector('#stats-row .stat:nth-child(2) .stat-label').textContent = 'Livello';
+        document.querySelector('#stats-row .stat:nth-child(4) .stat-label').textContent = 'Max Mult';
+
         playerColor = getCellColor(0, 0);
         genNextColors();
         cycleStart = performance.now();
         updateColorUI(); updateNextUI();
+
+        if (gameMode === 'escape') {
+            // Escape mode init
+            escScore = 0; escRoomsCleared = 0; escTotalMovesMade = 0;
+            escRushActive = false; escSwitchActive = false;
+            escSpecialCells.clear();
+            availableColors = 4; // start with more colors in escape
+            cellMap.clear();
+            playerColor = getCellColor(0, 0);
+            genNextColors();
+            updateColorUI(); updateNextUI();
+
+            // Show escape HUD, hide arcade HUD elements
+            escHud.style.display = 'flex';
+            document.getElementById('lives-display').style.display = 'none';
+            levelEl.style.display = 'none';
+            hintEl.style.opacity = '0';
+            hintVisible = false;
+            csSwitchOverlay.style.display = 'none';
+
+            escStartRoom(1);
+        } else {
+            // Arcade mode: ensure escape HUD is hidden
+            escHud.style.display = 'none';
+            document.getElementById('lives-display').style.display = 'flex';
+            levelEl.style.display = '';
+            exitArrowCanvas.style.opacity = '0';
+            csSwitchOverlay.style.display = 'none';
+            rushTimerFill.style.transform = 'scaleX(0)';
+        }
 
         gameRunning = true;
         startDrone();
