@@ -626,8 +626,8 @@
 <button id="vol-btn" title="Toggle Sound">♫</button>
 
 <div id="escape-hud">
-    <div id="moves-left">25</div>
-    <div id="moves-label">Mosse</div>
+    <div id="moves-left">30</div>
+    <div id="moves-label">Secondi</div>
     <div id="room-display">Stanza 1</div>
 </div>
 
@@ -1205,7 +1205,7 @@
     };
     const MODE_INSTRUCTIONS = {
         arcade: 'Il tuo quadrato <strong>cambia colore</strong> automaticamente.<br>Puoi muoverti <strong>solo sulle celle</strong> del tuo stesso colore.<br>Colore sbagliato = <strong>perdi una vita</strong>.<br>Sopravvivi il piu a lungo possibile.',
-        escape: 'Hai un numero <strong>limitato di mosse</strong> per raggiungere l\'uscita.<br>Colore sbagliato = <strong>-3 mosse</strong>.<br>Celle speciali: <strong>⚡ Rush</strong>, <strong>🔄 Sequenza</strong>, <strong>💎 Shortcut</strong>.<br>Quante stanze riesci a superare?',
+        escape: 'Hai un <strong>timer</strong> per raggiungere l\'uscita.<br>Colore sbagliato = <strong>-1.5 secondi</strong>.<br>Pianifica il percorso guardando i <strong>prossimi colori</strong>.<br>Celle speciali: <strong>\u26A1 Rush</strong>, <strong>\uD83D\uDD04 Sequenza</strong>, <strong>\uD83D\uDC8E Shortcut</strong>.',
     };
 
     [modeArcadeBtn, modeEscapeBtn].forEach(btn => {
@@ -1221,14 +1221,14 @@
     // ============================================================
     //  ESCAPE MODE — STATE & CONSTANTS
     // ============================================================
-    const ESC_BASE_MOVES = 25;
-    const ESC_MOVE_DEC = 1;         // moves decrease per room
-    const ESC_MIN_MOVES = 12;
-    const ESC_WRONG_PENALTY = 3;
-    const ESC_EXIT_BASE_DIST = 6;   // exit distance room 1
-    const ESC_EXIT_DIST_INC = 1.5;  // distance increase per room
+    const ESC_BASE_TIME = 30;        // seconds per room
+    const ESC_TIME_DEC = 1;          // seconds less per room
+    const ESC_MIN_TIME = 15;         // minimum seconds per room
+    const ESC_WRONG_PENALTY = 1.5;   // seconds lost on wrong color
+    const ESC_EXIT_BASE_DIST = 6;    // exit distance room 1
+    const ESC_EXIT_DIST_INC = 1.5;   // distance increase per room
 
-    let escMovesLeft = 0;
+    let escTimeLeft = 0;             // seconds remaining (float)
     let escRoom = 0;
     let escExitGX = 0, escExitGY = 0;
     let escSpecialCells = new Map(); // key -> {type:'rush'|'switch'|'shortcut', used:false}
@@ -1237,6 +1237,7 @@
     let escScore = 0;
     let escRoomsCleared = 0;
     let escTotalMovesMade = 0;
+    let escFrozen = false;           // brief freeze after room clear
 
     // DOM for escape
     const escHud = document.getElementById('escape-hud');
@@ -1252,11 +1253,10 @@
     const exitArrowCanvas = document.getElementById('exit-arrow');
     const exitArrowCtx = exitArrowCanvas.getContext('2d');
 
-    function escUpdateMovesUI() {
-        movesLeftEl.textContent = escMovesLeft;
-        movesLeftEl.classList.toggle('low', escMovesLeft <= 5);
-        movesLeftEl.classList.add('bump');
-        setTimeout(() => movesLeftEl.classList.remove('bump'), 80);
+    function escUpdateTimerUI() {
+        const display = Math.ceil(escTimeLeft);
+        movesLeftEl.textContent = display;
+        movesLeftEl.classList.toggle('low', escTimeLeft <= 5);
     }
 
     function escShowEvent(text, color, size) {
@@ -1299,13 +1299,14 @@
 
     function escStartRoom(room) {
         escRoom = room;
-        escMovesLeft = Math.max(ESC_MIN_MOVES, ESC_BASE_MOVES - (room - 1) * ESC_MOVE_DEC);
+        escTimeLeft = Math.max(ESC_MIN_TIME, ESC_BASE_TIME - (room - 1) * ESC_TIME_DEC);
         escPlaceExit(room);
         escPlaceSpecials(room);
         escRushActive = false;
         escSwitchActive = false;
+        escFrozen = false;
         roomDisplay.textContent = 'Stanza ' + room;
-        escUpdateMovesUI();
+        escUpdateTimerUI();
 
         if (room > 1) {
             escShowEvent('STANZA ' + room, '#4d96ff', 26);
@@ -1314,16 +1315,16 @@
         }
     }
 
-    // Rush event: 5s free movement (no move cost)
+    // Rush event: 5s of no color penalty (wrong color = free, no time loss)
     function escActivateRush() {
         escRushActive = true;
         escRushEnd = performance.now() + 5000;
-        escShowEvent('⚡ RUSH!', '#ffd93d', 28);
+        escShowEvent('\u26A1 RUSH!', '#ffd93d', 28);
         sndComboTier(2);
         screenFlash = 0.5; screenFlashColor = '#ffd93d';
     }
 
-    // Color Switch event: match a sequence of colors for +5 moves
+    // Color Switch event: match a color sequence for +3 seconds
     function escActivateSwitch() {
         const seqLen = Math.min(5, 3 + Math.floor(escRoom / 3));
         escSwitchSeq = [];
@@ -1333,7 +1334,7 @@
         escSwitchIdx = 0;
         escSwitchActive = true;
         escSwitchEnd = performance.now() + (seqLen * 1500 + 1000);
-        escShowEvent('🔄 SEQUENZA!', '#6bcb77', 24);
+        escShowEvent('\uD83D\uDD04 SEQUENZA!', '#6bcb77', 24);
         sndComboTier(1);
         escUpdateSwitchUI();
         csSwitchOverlay.style.display = 'flex';
@@ -2057,7 +2058,15 @@
             if (now - cycleStart >= cycleTime) cyclePlayerColor();
 
             // Escape mode timers
-            if (gameMode === 'escape') {
+            if (gameMode === 'escape' && !escFrozen) {
+                // Countdown room timer
+                escTimeLeft -= dt;
+                escUpdateTimerUI();
+                if (escTimeLeft <= 0) {
+                    escTimeLeft = 0;
+                    escGameOver();
+                }
+
                 if (escRushActive) {
                     const remain = (escRushEnd - performance.now()) / 5000;
                     rushTimerFill.style.transform = `scaleX(${Math.max(0, remain)})`;
@@ -2233,12 +2242,6 @@
         if (gameMode === 'escape') {
             escTotalMovesMade++;
 
-            // Deduct move (unless Rush is active)
-            if (!escRushActive) {
-                escMovesLeft--;
-                escUpdateMovesUI();
-            }
-
             // Check exit reached
             if (playerGX === escExitGX && playerGY === escExitGY) {
                 escRoomCleared();
@@ -2262,22 +2265,16 @@
                     escUpdateSwitchUI();
                     sndCombo(escSwitchIdx);
                     if (escSwitchIdx >= escSwitchSeq.length) {
-                        // Sequence complete!
+                        // Sequence complete! +3 seconds
                         escSwitchActive = false;
                         csSwitchOverlay.style.display = 'none';
-                        escMovesLeft += 5;
-                        escUpdateMovesUI();
-                        escShowEvent('+5 MOSSE!', '#6bcb77', 24);
+                        escTimeLeft += 3;
+                        escUpdateTimerUI();
+                        escShowEvent('+3 SEC!', '#6bcb77', 24);
                         sndComboTier(2);
                         escScore += 50;
                     }
                 }
-            }
-
-            // Check out of moves
-            if (escMovesLeft <= 0 && !escRushActive) {
-                escGameOver();
-                return;
             }
 
             // Escape scoring: +1 per move
@@ -2401,8 +2398,9 @@
     //  ESCAPE MODE — HURT / ROOM CLEAR / GAME OVER
     // ============================================================
     function escHurt(tx, ty) {
-        escMovesLeft = Math.max(0, escMovesLeft - ESC_WRONG_PENALTY);
-        escUpdateMovesUI();
+        // Lose time on wrong color
+        escTimeLeft = Math.max(0, escTimeLeft - ESC_WRONG_PENALTY);
+        escUpdateTimerUI();
 
         shakeDecay = 0.8;
         screenFlash = 0.8; screenFlashColor = '#ff2244';
@@ -2410,20 +2408,21 @@
         const wx = tx * STRIDE + CELL / 2;
         const wy = ty * STRIDE + CELL / 2;
         spawnP(wx, wy, '#ff2244', 10, 0.7);
-        spawnFloat('-' + ESC_WRONG_PENALTY, wx, wy - CELL / 2, '#ff6b6b');
+        spawnFloat('-' + ESC_WRONG_PENALTY + 's', wx, wy - CELL / 2, '#ff6b6b');
         sndHurt();
         playerScaleTarget = 0.7;
         setTimeout(() => { playerScaleTarget = 1; }, 180);
 
-        if (escMovesLeft <= 0) {
+        if (escTimeLeft <= 0) {
             escGameOver();
         }
     }
 
     function escRoomCleared() {
         escRoomsCleared++;
-        const moveBonus = escMovesLeft * 5;
-        const roomPts = escRoom * 100 + moveBonus;
+        escFrozen = true; // pause timer during transition
+        const timeBonus = Math.round(escTimeLeft * 5);
+        const roomPts = escRoom * 100 + timeBonus;
         escScore += roomPts;
         score = escScore;
         scoreEl.textContent = score;
@@ -2477,7 +2476,7 @@
             finalScoreEl.style.color = '#4d96ff';
             bestScoreTextEl.textContent = 'Best: ' + (parseInt(localStorage.getItem('cs3_best_escape') || '0'));
             newBestEl.style.display = isNew ? 'block' : 'none';
-            deathMsgEl.textContent = 'Mosse esaurite!';
+            deathMsgEl.textContent = 'Tempo scaduto!';
             document.getElementById('stat-moves').textContent = escTotalMovesMade;
             document.getElementById('stat-level').textContent = escRoomsCleared + ' stanze';
             document.getElementById('stat-combo').textContent = maxCombo;
@@ -2559,9 +2558,10 @@
         if (gameMode === 'escape') {
             // Escape mode init
             escScore = 0; escRoomsCleared = 0; escTotalMovesMade = 0;
-            escRushActive = false; escSwitchActive = false;
+            escRushActive = false; escSwitchActive = false; escFrozen = false;
             escSpecialCells.clear();
             availableColors = 4; // start with more colors in escape
+            cycleTime = 3200; // slower color cycle = more time to plan
             cellMap.clear();
             playerColor = getCellColor(0, 0);
             genNextColors();
@@ -2574,6 +2574,7 @@
             hintEl.style.opacity = '0';
             hintVisible = false;
             csSwitchOverlay.style.display = 'none';
+            rushTimerFill.style.transform = 'scaleX(0)';
 
             escStartRoom(1);
         } else {
