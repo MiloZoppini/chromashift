@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ChromaShift</title>
+    <script src="https://sdk.crazygames.com/crazygames-sdk-v2.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -705,6 +706,72 @@
 <script>
 (() => {
     // ============================================================
+    //  CRAZYGAMES SDK
+    // ============================================================
+    let cgReady = false;
+    const CG_ENCRYPTION_KEY = 'PLACEHOLDER_KEY'; // Replace with real key from CrazyGames dashboard
+
+    function cgInit() {
+        try {
+            if (window.CrazyGames && window.CrazyGames.SDK) { cgReady = true; }
+        } catch (e) { cgReady = false; }
+    }
+
+    // Safe SDK callers
+    function cgGameplayStart() { if (cgReady) try { window.CrazyGames.SDK.game.gameplayStart(); } catch(e) {} }
+    function cgGameplayStop()  { if (cgReady) try { window.CrazyGames.SDK.game.gameplayStop(); } catch(e) {} }
+    function cgHappyTime()     { if (cgReady) try { window.CrazyGames.SDK.game.happytime(); } catch(e) {} }
+    function cgLoadingStart()  { if (cgReady) try { window.CrazyGames.SDK.game.loadingStart(); } catch(e) {} }
+    function cgLoadingStop()   { if (cgReady) try { window.CrazyGames.SDK.game.loadingStop(); } catch(e) {} }
+
+    // Data sync wrappers (CrazyGames data + localStorage fallback)
+    function cgSet(key, val) {
+        localStorage.setItem(key, typeof val === 'string' ? val : String(val));
+        if (cgReady) try { window.CrazyGames.SDK.data.setItem(key, typeof val === 'string' ? val : String(val)); } catch(e) {}
+    }
+    function cgGet(key) {
+        if (cgReady) try { const v = window.CrazyGames.SDK.data.getItem(key); if (v !== null) return v; } catch(e) {}
+        return localStorage.getItem(key);
+    }
+
+    // Score encryption for CrazyGames leaderboard (AES-GCM)
+    async function cgEncryptScore(score) {
+        if (!cgReady || CG_ENCRYPTION_KEY === 'PLACEHOLDER_KEY') return null;
+        try {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const algo = { name: 'AES-GCM', iv };
+            const keyBytes = Uint8Array.from(atob(CG_ENCRYPTION_KEY), c => c.charCodeAt(0));
+            const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, algo, false, ['encrypt']);
+            const enc = await crypto.subtle.encrypt(algo, cryptoKey, new TextEncoder().encode(score.toString()));
+            const combined = new Uint8Array(iv.length + enc.byteLength);
+            combined.set(iv);
+            combined.set(new Uint8Array(enc), iv.length);
+            return btoa(String.fromCharCode(...combined));
+        } catch (e) { return null; }
+    }
+
+    // Submit score to CrazyGames leaderboard (Rush mode only)
+    async function cgSubmitScore(sc) {
+        if (!cgReady || CG_ENCRYPTION_KEY === 'PLACEHOLDER_KEY') return;
+        try {
+            const encrypted = await cgEncryptScore(sc);
+            if (encrypted) { await window.CrazyGames.SDK.user.submitScore({ encryptedScore: encrypted }); }
+        } catch (e) {}
+    }
+
+    // Request midgame ad, then call callback
+    function cgRequestAd(callback) {
+        if (!cgReady) { callback(); return; }
+        try {
+            window.CrazyGames.SDK.ad.requestAd('midgame', {
+                adStarted: () => { if (ac && master) master.gain.value = 0; },
+                adFinished: () => { if (ac && master && !muted) master.gain.value = 0.5; callback(); },
+                adError: () => { if (ac && master && !muted) master.gain.value = 0.5; callback(); }
+            });
+        } catch (e) { callback(); }
+    }
+
+    // ============================================================
     //  AUDIO ENGINE — Full procedural sound design
     // ============================================================
     let ac = null;        // AudioContext
@@ -1261,16 +1328,20 @@
         stopDrone(); stopHeartbeat();
         modeTimerHud.style.display = 'none';
         pauseBtn.style.display = 'none';
+        cgGameplayStop();
         sndDeath();
 
         const spWx = playerGX * STRIDE + CELL / 2;
         const spWy = playerGY * STRIDE + CELL / 2;
         spawnP(spWx, spWy, COLORS[playerColor], 20, 1.2);
 
+        // Submit to CrazyGames leaderboard (Rush mode)
+        cgSubmitScore(score);
+
         setTimeout(() => {
-            const spBest = parseInt(localStorage.getItem('cs3_best_sprint') || '0');
+            const spBest = parseInt(cgGet('cs3_best_sprint') || '0');
             const isNew = score > spBest;
-            if (isNew) localStorage.setItem('cs3_best_sprint', score);
+            if (isNew) { cgSet('cs3_best_sprint', score); cgHappyTime(); }
 
             finalScoreEl.textContent = score;
             finalScoreEl.style.color = '#ff9f43';
@@ -1294,7 +1365,9 @@
                 nameInputRow.style.display = 'none';
             }
             renderLeaderboard(-1);
-            gameOverScreen.style.display = 'flex';
+
+            // Show ad, then game over screen
+            cgRequestAd(() => { gameOverScreen.style.display = 'flex'; });
         }, 600);
     }
 
@@ -1305,6 +1378,7 @@
         if (!gameRunning || dying || gamePaused) return;
         gamePaused = true;
         pauseStartTime = performance.now();
+        cgGameplayStop();
         stopDrone(); stopHeartbeat();
         pauseScoreEl.textContent = score;
         pauseScreen.style.display = 'flex';
@@ -1322,12 +1396,14 @@
         pauseScreen.style.display = 'none';
         pauseBtn.style.display = 'flex';
         if (!muted) { startDrone(); startHeartbeat(); }
+        cgGameplayStart();
     }
 
     function returnToMenu() {
         gamePaused = false;
         gameRunning = false;
         dying = false;
+        cgGameplayStop();
         stopDrone(); stopHeartbeat();
         pauseScreen.style.display = 'none';
         pauseBtn.style.display = 'none';
@@ -1389,7 +1465,7 @@
     let playerColor = 0;
     let nextColors = [];
     let score = 0, level = 1, lives = 3;
-    let bestScore = parseInt(localStorage.getItem('cs3_best') || '0');
+    let bestScore = parseInt(cgGet('cs3_best') || '0');
     let gameRunning = false;
     let availableColors = 3;
     let cycleTime = BASE_CYCLE, cycleStart = 0;
@@ -1483,7 +1559,7 @@
     }
 
     // Restore last used name
-    let lastPlayerName = localStorage.getItem('cs3_name') || '';
+    let lastPlayerName = cgGet('cs3_name') || '';
 
     // ============================================================
     //  RESIZE
@@ -2055,6 +2131,7 @@
                     }, 1400);
 
                     sndComboTier(t);
+                    if (tier.label === 'LEGENDARY') cgHappyTime();
                     screenFlash = 0.6;
                     screenFlashColor = tier.color;
                     spawnP(wx2, wy2, tier.color, 15 + t * 5, 1.2);
@@ -2163,6 +2240,7 @@
         deathTime = performance.now();
         deathX = tx; deathY = ty;
         pauseBtn.style.display = 'none';
+        cgGameplayStop();
 
         sndDeath();
         stopDrone();
@@ -2180,7 +2258,7 @@
             gameRunning = false; dying = false;
 
             const isNew = score > bestScore;
-            if (isNew) { bestScore = score; localStorage.setItem('cs3_best', bestScore); }
+            if (isNew) { bestScore = score; cgSet('cs3_best', bestScore); cgHappyTime(); }
 
             finalScoreEl.textContent = score;
             finalScoreEl.style.color = COLORS[playerColor];
@@ -2209,7 +2287,9 @@
             }
 
             renderLeaderboard(-1); // show existing
-            gameOverScreen.style.display = 'flex';
+
+            // Show ad, then game over screen
+            cgRequestAd(() => { gameOverScreen.style.display = 'flex'; });
         }, 1000);
     }
 
@@ -2221,7 +2301,7 @@
         const name = playerNameInput.value.trim();
         if (name && score > 0 && isLeaderboardWorthy(score)) {
             lastPlayerName = name;
-            localStorage.setItem('cs3_name', name);
+            cgSet('cs3_name', name);
             saveToLeaderboard(name, score, level, maxCombo);
         }
     }
@@ -2294,6 +2374,7 @@
         pauseBtn.style.display = 'flex';
         startDrone();
         startHeartbeat();
+        cgGameplayStart();
     }
 
     // ============================================================
@@ -2344,6 +2425,7 @@
     }, { passive: false });
     document.addEventListener('gesturestart', (e) => e.preventDefault());
     document.addEventListener('gesturechange', (e) => e.preventDefault());
+    window.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
 
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('restart-btn').addEventListener('click', startGame);
@@ -2363,10 +2445,24 @@
     // ============================================================
     //  INIT
     // ============================================================
+    cgInit();
+    cgLoadingStart();
+
+    // Pre-fill username from CrazyGames account if available
+    if (cgReady) {
+        try {
+            if (window.CrazyGames.SDK.user.isUserAccountAvailable) {
+                const cgUser = window.CrazyGames.SDK.user.getUser();
+                if (cgUser && cgUser.username) lastPlayerName = cgUser.username;
+            }
+        } catch (e) {}
+    }
+
     playerColor = 0;
     updateColorUI();
     genNextColors();
     renderLeaderboard(-1);
+    cgLoadingStop();
     requestAnimationFrame(loop);
 })();
 </script>
