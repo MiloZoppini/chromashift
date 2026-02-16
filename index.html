@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -18,6 +18,8 @@
             height: 100dvh;
             user-select: none;
             -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
             touch-action: none;
             -webkit-touch-callout: none;
         }
@@ -605,11 +607,11 @@
 <div id="combo-tier-text"></div>
 <div id="combo-multiplier"></div>
 <button id="vol-btn" title="Toggle Sound">♫</button>
-<button id="pause-btn" title="Pausa">❚❚</button>
+<button id="pause-btn" title="Pause">❚❚</button>
 
 <div id="mode-timer-hud">
     <div id="mode-timer-val">60</div>
-    <div id="mode-timer-label">Secondi</div>
+    <div id="mode-timer-label">Seconds</div>
 </div>
 
 <div id="mode-event-text"></div>
@@ -649,51 +651,51 @@
     </div>
 </div>
 
-<div id="hint-text">Frecce o WASD &mdash; muoviti solo sulle celle del tuo colore</div>
+<div id="hint-text">Arrows or WASD &mdash; move only on cells matching your color</div>
 
 <div class="overlay" id="start-screen">
     <h1>ChromaShift</h1>
     <div class="subtitle">color survival</div>
     <p id="mode-instructions">
-        Il tuo quadrato <strong>cambia colore</strong> automaticamente.<br>
-        Puoi muoverti <strong>solo sulle celle</strong> del tuo stesso colore.<br>
-        Colore sbagliato = <strong>perdi una vita</strong>.<br>
-        Sopravvivi il piu a lungo possibile.
+        Your square <strong>changes color</strong> automatically.<br>
+        You can only move on cells <strong>matching your color</strong>.<br>
+        Wrong color = <strong>lose a life</strong>.<br>
+        Survive as long as you can.
     </p>
     <div class="mode-select">
         <button class="mode-btn selected" id="mode-arcade" data-mode="arcade">Arcade</button>
         <button class="mode-btn" id="mode-sprint" data-mode="sprint">Rush</button>
     </div>
-    <div class="mode-desc" id="mode-desc">Sopravvivi il piu a lungo possibile</div>
-    <button class="btn" id="start-btn">Gioca</button>
+    <div class="mode-desc" id="mode-desc">Survive as long as you can</div>
+    <button class="btn" id="start-btn">Play</button>
 </div>
 
 <div class="overlay" id="game-over" style="display:none;">
     <h1>Game Over</h1>
     <div id="final-score">0</div>
-    <div id="new-best">Nuovo Record!</div>
+    <div id="new-best">New Record!</div>
     <div id="best-score-text"></div>
     <div id="stats-row">
-        <div class="stat"><span class="stat-val" id="stat-moves">0</span><span class="stat-label">Mosse</span></div>
-        <div class="stat"><span class="stat-val" id="stat-level">1</span><span class="stat-label">Livello</span></div>
+        <div class="stat"><span class="stat-val" id="stat-moves">0</span><span class="stat-label">Moves</span></div>
+        <div class="stat"><span class="stat-val" id="stat-level">1</span><span class="stat-label">Level</span></div>
         <div class="stat"><span class="stat-val" id="stat-combo">0</span><span class="stat-label">Max Combo</span></div>
         <div class="stat"><span class="stat-val" id="stat-mult">x1</span><span class="stat-label">Max Mult</span></div>
     </div>
     <div id="death-msg"></div>
     <div id="name-input-row">
-        <label>Il tuo nome</label>
+        <label>Your name</label>
         <input type="text" id="player-name" placeholder="AAA" maxlength="12" autocomplete="off" spellcheck="false">
     </div>
-    <div id="leaderboard"><h3>Classifica</h3></div>
-    <button class="btn" id="restart-btn">Riprova</button>
+    <div id="leaderboard"><h3>Leaderboard</h3></div>
+    <button class="btn" id="restart-btn">Retry</button>
 </div>
 
 <div class="overlay" id="pause-screen" style="display:none; z-index:30;">
-    <h1 style="-webkit-text-fill-color:#fff; background:none; font-size:28px; letter-spacing:10px; color:#fff;">PAUSA</h1>
+    <h1 style="-webkit-text-fill-color:#fff; background:none; font-size:28px; letter-spacing:10px; color:#fff;">PAUSED</h1>
     <div id="pause-score">0</div>
-    <div id="pause-score-label">Punteggio</div>
-    <button class="btn" id="resume-btn">Riprendi</button>
-    <button class="btn" id="menu-btn">Menu Principale</button>
+    <div id="pause-score-label">Score</div>
+    <button class="btn" id="resume-btn">Resume</button>
+    <button class="btn" id="menu-btn">Main Menu</button>
 </div>
 
 <div id="mobile-dpad">
@@ -705,6 +707,16 @@
 
 <script>
 (() => {
+    // ============================================================
+    //  SITELOCK — Protect game on CrazyGames only
+    // ============================================================
+    const _h = window.location.hostname;
+    const _allowed = _h === 'localhost' || _h === '127.0.0.1' || _h.endsWith('.github.io') || _h.endsWith('crazygames.com');
+    if (!_allowed) {
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#fff;font-size:20px;font-family:monospace;background:#050507;text-align:center;padding:20px;">Play ChromaShift on<br><a href="https://www.crazygames.com" style="color:#4d96ff;">CrazyGames.com</a></div>';
+        return;
+    }
+
     // ============================================================
     //  CRAZYGAMES SDK
     // ============================================================
@@ -1237,12 +1249,12 @@
     const modeInstructions = document.getElementById('mode-instructions');
 
     const MODE_DESCS = {
-        arcade: 'Sopravvivi il piu a lungo possibile',
-        sprint: '60 secondi. Fai piu punti possibile.',
+        arcade: 'Survive as long as you can',
+        sprint: '60 seconds. Score as many points as possible.',
     };
     const MODE_INSTRUCTIONS = {
-        arcade: 'Il tuo quadrato <strong>cambia colore</strong> automaticamente.<br>Puoi muoverti <strong>solo sulle celle</strong> del tuo stesso colore.<br>Colore sbagliato = <strong>perdi una vita</strong>.<br>Sopravvivi il piu a lungo possibile.',
-        sprint: '<strong>60 secondi</strong> sul timer. Fai piu punti possibile!<br>Colore sbagliato = <strong>freeze 0.5s</strong> + combo reset.<br><strong>Niente vite</strong> — il tempo e il tuo unico nemico.<br>Combo multiplier identico. Vai veloce!',
+        arcade: 'Your square <strong>changes color</strong> automatically.<br>You can only move on cells <strong>matching your color</strong>.<br>Wrong color = <strong>lose a life</strong>.<br>Survive as long as you can.',
+        sprint: '<strong>60 seconds</strong> on the clock. Score as much as you can!<br>Wrong color = <strong>0.5s freeze</strong> + combo reset.<br><strong>No lives</strong> — time is your only enemy.<br>Same combo multiplier. Go fast!',
     };
 
     modeBtns.forEach(btn => {
@@ -1338,7 +1350,7 @@
             finalScoreEl.style.color = '#ff9f43';
             bestScoreTextEl.textContent = 'Best: ' + Math.max(score, spBest);
             newBestEl.style.display = isNew ? 'block' : 'none';
-            deathMsgEl.textContent = 'Tempo scaduto!';
+            deathMsgEl.textContent = 'Time\'s up!';
             document.getElementById('stat-moves').textContent = modeTotalMoves;
             document.getElementById('stat-level').textContent = level;
             document.getElementById('stat-combo').textContent = maxCombo;
@@ -1526,7 +1538,7 @@
         const lb = getLeaderboard();
         if (lb.length === 0) { leaderboardEl.style.display = 'none'; return; }
         leaderboardEl.style.display = 'block';
-        let html = '<h3>Classifica</h3>';
+        let html = '<h3>Leaderboard</h3>';
         lb.forEach((e, i) => {
             const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
             const isCurrent = (e.score === currentScore && e.date && Date.now() - e.date < 3000);
@@ -2110,7 +2122,7 @@
                     void comboTierText.offsetWidth; // reflow
                     comboTierText.classList.add('show');
 
-                    comboMultiplier.textContent = 'x' + tier.mult + ' PUNTI';
+                    comboMultiplier.textContent = 'x' + tier.mult + ' POINTS';
                     comboMultiplier.style.color = tier.color;
                     comboMultiplier.classList.remove('show');
                     void comboMultiplier.offsetWidth;
@@ -2188,7 +2200,7 @@
                 cycleTime = Math.max(MIN_CYCLE, cycleTime - 80);
 
                 // Announce new color
-                newColorText.textContent = '+1 COLORE — ' + availableColors + ' COLORI';
+                newColorText.textContent = '+1 COLOR — ' + availableColors + ' COLORS';
                 newColorText.style.color = COLORS[availableColors - 1];
                 newColorText.style.textShadow = `0 0 30px ${COLORS[availableColors - 1]}44`;
                 newColorText.classList.add('show');
@@ -2255,7 +2267,7 @@
             finalScoreEl.style.color = COLORS[playerColor];
             bestScoreTextEl.textContent = 'Best: ' + bestScore;
             newBestEl.style.display = isNew ? 'block' : 'none';
-            deathMsgEl.textContent = 'Colore sbagliato!';
+            deathMsgEl.textContent = 'Wrong color!';
             document.getElementById('stat-moves').textContent = moveCount;
             document.getElementById('stat-level').textContent = level;
             document.getElementById('stat-combo').textContent = maxCombo;
@@ -2323,7 +2335,7 @@
 
         // Set leaderboard key based on mode and reset stat labels
         LB_KEY = gameMode === 'sprint' ? LB_KEY_SPRINT : LB_KEY_ARCADE;
-        document.querySelector('#stats-row .stat:nth-child(2) .stat-label').textContent = 'Livello';
+        document.querySelector('#stats-row .stat:nth-child(2) .stat-label').textContent = 'Level';
         document.querySelector('#stats-row .stat:nth-child(4) .stat-label').textContent = 'Max Mult';
 
         playerColor = getCellColor(0, 0);
@@ -2348,7 +2360,7 @@
         if (gameMode === 'sprint') {
             // Rush mode: 60s countdown, no lives, wrong = freeze
             modeTimeLeft = SPRINT_DURATION;
-            modeTimerLabel.textContent = 'Secondi';
+            modeTimerLabel.textContent = 'Seconds';
             modeTimerVal.textContent = SPRINT_DURATION;
             modeTimerVal.classList.remove('low');
             modeTimerHud.style.display = 'flex';
