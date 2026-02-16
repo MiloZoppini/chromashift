@@ -759,17 +759,8 @@
         } catch (e) {}
     }
 
-    // Request midgame ad, then call callback
-    function cgRequestAd(callback) {
-        if (!cgReady) { callback(); return; }
-        try {
-            window.CrazyGames.SDK.ad.requestAd('midgame', {
-                adStarted: () => { if (ac && master) master.gain.value = 0; },
-                adFinished: () => { if (ac && master && !muted) master.gain.value = 0.5; callback(); },
-                adError: () => { if (ac && master && !muted) master.gain.value = 0.5; callback(); }
-            });
-        } catch (e) { callback(); }
-    }
+    // NOTE: Ads disabled for Basic Launch. Re-enable after Full Launch promotion.
+    // function cgRequestAd(callback) { ... }
 
     // ============================================================
     //  AUDIO ENGINE — Full procedural sound design
@@ -1367,7 +1358,7 @@
             renderLeaderboard(-1);
 
             // Show ad, then game over screen
-            cgRequestAd(() => { gameOverScreen.style.display = 'flex'; });
+            gameOverScreen.style.display = 'flex';
         }, 600);
     }
 
@@ -2289,7 +2280,7 @@
             renderLeaderboard(-1); // show existing
 
             // Show ad, then game over screen
-            cgRequestAd(() => { gameOverScreen.style.display = 'flex'; });
+            gameOverScreen.style.display = 'flex';
         }, 1000);
     }
 
