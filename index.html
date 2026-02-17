@@ -135,7 +135,7 @@
         .overlay {
             position: fixed; inset: 0;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background: rgba(3,3,5,0.95); z-index: 20; gap: 14px;
+            background: rgba(3,3,5,0.88); z-index: 20; gap: 14px;
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             animation: fadeIn 0.4s ease;
             overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -143,6 +143,24 @@
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Staggered entrance for start screen */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #start-screen > * {
+            opacity: 0;
+            animation: slideUp 0.6s ease-out forwards;
+        }
+        #start-screen > *:nth-child(1) { animation-delay: 0.1s; }
+        #start-screen > *:nth-child(2) { animation-delay: 0.25s; }
+        #start-screen > *:nth-child(3) { animation-delay: 0.4s; }
+        #start-screen > *:nth-child(4) { animation-delay: 0.55s; }
+        #start-screen > *:nth-child(5) { animation-delay: 0.65s; }
+        #start-screen > *:nth-child(6) { animation-delay: 0.75s; }
+        #start-screen > *:nth-child(7) { animation-delay: 0.85s; }
 
         .overlay h1 {
             font-size: 52px; font-weight: 900; letter-spacing: 10px; text-transform: uppercase;
@@ -160,6 +178,12 @@
         .overlay .subtitle {
             font-size: 11px; letter-spacing: 8px; text-transform: uppercase;
             color: #222; margin-top: -6px;
+            animation: subtitlePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes subtitlePulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
         }
 
         .overlay p {
@@ -192,6 +216,19 @@
         .btn:hover::before { opacity: 1; }
         .btn:active { transform: translateY(0); }
 
+        /* Pulsing glow for primary action buttons */
+        #start-btn {
+            animation: slideUp 0.6s ease-out forwards, btnGlow 2.5s ease-in-out 0.85s infinite;
+        }
+        #restart-btn {
+            animation: btnGlow 2.5s ease-in-out infinite;
+        }
+
+        @keyframes btnGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(77,150,255,0.05), inset 0 0 15px rgba(77,150,255,0.02); }
+            50% { box-shadow: 0 0 25px rgba(77,150,255,0.15), inset 0 0 20px rgba(77,150,255,0.05); border-color: #1e2a3a; }
+        }
+
         #game-over h1 {
             -webkit-text-fill-color: #fff; background: none;
             font-size: 18px; letter-spacing: 8px; color: #444;
@@ -202,11 +239,15 @@
         #best-score-text { color: #ffd93d; font-size: 13px; letter-spacing: 2px; }
 
         #new-best {
-            display: none; font-size: 11px; letter-spacing: 5px;
-            text-transform: uppercase; color: #ffd93d; animation: pulse 1.2s ease infinite;
+            display: none; font-size: 14px; letter-spacing: 5px;
+            text-transform: uppercase; color: #ffd93d; animation: newBestPulse 1.2s ease infinite;
+            text-shadow: 0 0 20px rgba(255,217,61,0.5), 0 0 40px rgba(255,217,61,0.2);
         }
 
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes newBestPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
 
         #death-msg { color: #ff6b6b; font-size: 12px; letter-spacing: 2px; }
 
@@ -667,7 +708,9 @@
         <button class="mode-btn" id="mode-sprint" data-mode="sprint">Rush</button>
     </div>
     <div class="mode-desc" id="mode-desc">Survive as long as you can</div>
+    <div id="menu-best" style="font-size:11px; letter-spacing:4px; text-transform:uppercase; color:#222; margin-top:6px;"></div>
     <button class="btn" id="start-btn">Play</button>
+    <div style="font-size:9px; letter-spacing:3px; color:#1a1a1a; margin-top:20px; text-transform:uppercase;">v1.0</div>
 </div>
 
 <div class="overlay" id="game-over" style="display:none;">
@@ -1218,6 +1261,74 @@
         droneNodes = [];
     }
 
+    // ---- MENU DRONE (lighter ambient for start/game-over screens) ----
+    let menuDroneNodes = [];
+
+    function startMenuDrone() {
+        if (!ac || muted || menuDroneNodes.length > 0) return;
+
+        // Layer 1: very soft sub
+        const o1 = ac.createOscillator();
+        o1.type = 'sine';
+        o1.frequency.value = 40;
+        const g1 = ac.createGain();
+        g1.gain.value = 0.018;
+        const lfo1 = ac.createOscillator();
+        lfo1.frequency.value = 0.06;
+        const lfoG1 = ac.createGain();
+        lfoG1.gain.value = 0.008;
+        lfo1.connect(lfoG1);
+        lfoG1.connect(g1.gain);
+        o1.connect(g1);
+        g1.connect(dryGain);
+        o1.start(); lfo1.start();
+        menuDroneNodes.push(o1, lfo1);
+
+        // Layer 2: soft high shimmer
+        const o3 = ac.createOscillator();
+        o3.type = 'sine';
+        o3.frequency.value = 880;
+        const g3 = ac.createGain();
+        g3.gain.value = 0.004;
+        const lfo3 = ac.createOscillator();
+        lfo3.frequency.value = 0.1;
+        const lfoG3 = ac.createGain();
+        lfoG3.gain.value = 0.003;
+        lfo3.connect(lfoG3);
+        lfoG3.connect(g3.gain);
+        o3.connect(g3);
+        send(g3);
+        o3.start(); lfo3.start();
+        menuDroneNodes.push(o3, lfo3);
+
+        // Layer 3: gentle mid-range pad
+        const o4 = ac.createOscillator();
+        o4.type = 'triangle';
+        o4.frequency.value = 220;
+        const f4 = ac.createBiquadFilter();
+        f4.type = 'lowpass';
+        f4.frequency.value = 300;
+        f4.Q.value = 1;
+        const g4 = ac.createGain();
+        g4.gain.value = 0.008;
+        const lfo4 = ac.createOscillator();
+        lfo4.frequency.value = 0.04;
+        const lfoG4 = ac.createGain();
+        lfoG4.gain.value = 40;
+        lfo4.connect(lfoG4);
+        lfoG4.connect(f4.frequency);
+        o4.connect(f4);
+        f4.connect(g4);
+        send(g4);
+        o4.start(); lfo4.start();
+        menuDroneNodes.push(o4, lfo4);
+    }
+
+    function stopMenuDrone() {
+        menuDroneNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+        menuDroneNodes = [];
+    }
+
     function makeDistCurve(amount) {
         const samples = 256;
         const curve = new Float32Array(samples);
@@ -1235,8 +1346,9 @@
         muted = !muted;
         volBtn.textContent = muted ? '✕' : '♫';
         volBtn.style.color = muted ? '#ff6b6b' : '#333';
-        if (muted) { stopDrone(); stopHeartbeat(); }
+        if (muted) { stopDrone(); stopMenuDrone(); stopHeartbeat(); }
         else if (gameRunning) { startDrone(); startHeartbeat(); }
+        else { startMenuDrone(); }
     });
 
     // ============================================================
@@ -1257,12 +1369,21 @@
         sprint: '<strong>60 seconds</strong> on the clock. Score as much as you can!<br>Wrong color = <strong>0.5s freeze</strong> + combo reset.<br><strong>No lives</strong> — time is your only enemy.<br>Same combo multiplier. Go fast!',
     };
 
+    const menuBestEl = document.getElementById('menu-best');
+
+    function updateMenuBest() {
+        const key = gameMode === 'sprint' ? 'cs3_best_sprint' : 'cs3_best';
+        const best = parseInt(cgGet(key) || '0');
+        menuBestEl.textContent = best > 0 ? ('Best: ' + best) : '';
+    }
+
     modeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             gameMode = btn.dataset.mode;
             modeBtns.forEach(b => b.classList.toggle('selected', b.dataset.mode === gameMode));
             modeDesc.textContent = MODE_DESCS[gameMode];
             modeInstructions.innerHTML = MODE_INSTRUCTIONS[gameMode];
+            updateMenuBest();
         });
     });
 
@@ -1346,8 +1467,7 @@
             const isNew = score > spBest;
             if (isNew) { cgSet('cs3_best_sprint', score); cgHappyTime(); }
 
-            finalScoreEl.textContent = score;
-            finalScoreEl.style.color = '#ff9f43';
+            animateScoreCountUp(score, '#ff9f43');
             bestScoreTextEl.textContent = 'Best: ' + Math.max(score, spBest);
             newBestEl.style.display = isNew ? 'block' : 'none';
             deathMsgEl.textContent = 'Time\'s up!';
@@ -1369,8 +1489,9 @@
             }
             renderLeaderboard(-1);
 
-            // Show ad, then game over screen
+            // Show game over screen
             gameOverScreen.style.display = 'flex';
+            startMenuDrone();
         }, 600);
     }
 
@@ -1413,6 +1534,33 @@
         modeTimerHud.style.display = 'none';
         freezeFlash.classList.remove('active');
         startScreen.style.display = 'flex';
+        updateMenuBest();
+        startMenuDrone();
+    }
+
+    // Sound: game start (launch)
+    function sndGameStart() {
+        if (!ac || muted) return;
+        const t = ac.currentTime;
+        // Rising sweep
+        const o = ac.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(200, t);
+        o.frequency.exponentialRampToValueAtTime(800, t + 0.2);
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0.12, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        o.connect(g); send(g);
+        o.start(t); o.stop(t + 0.25);
+        // Bright chime
+        const o2 = ac.createOscillator();
+        o2.type = 'sine';
+        o2.frequency.value = 1046.50;
+        const g2 = ac.createGain();
+        g2.gain.setValueAtTime(0.08, t + 0.15);
+        g2.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+        o2.connect(g2); send(g2);
+        o2.start(t + 0.15); o2.stop(t + 0.5);
     }
 
     // Sound: time up
@@ -1478,6 +1626,8 @@
 
     const cellMap = new Map();
     const trail = new Set();
+    const recentTrail = []; // ordered list of recent trail positions for glow effect
+    const RECENT_TRAIL_MAX = 8;
 
     // Visual state
     let dying = false, deathTime = 0, deathX = 0, deathY = 0;
@@ -1789,10 +1939,114 @@
     }
 
     // ============================================================
+    //  MENU BACKGROUND — Animated grid behind overlays
+    // ============================================================
+    let menuParticles = [];
+    const MENU_PARTICLE_MAX = 40;
+
+    function spawnMenuParticle() {
+        menuParticles.push({
+            x: Math.random() * W,
+            y: H + 10,
+            vx: (Math.random() - 0.5) * 15,
+            vy: -(12 + Math.random() * 25),
+            size: 1.5 + Math.random() * 3,
+            color: COLORS[Math.floor(Math.random() * COLORS.length)],
+            life: 3 + Math.random() * 4,
+            maxLife: 3 + Math.random() * 4,
+        });
+    }
+
+    function renderMenuBG(now) {
+        ctx.clearRect(0, 0, W, H);
+
+        // Slow orbiting camera
+        const menuCamX = Math.sin(now * 0.0001) * 350;
+        const menuCamY = Math.cos(now * 0.00008) * 250;
+
+        const ox = W / 2 - menuCamX;
+        const oy = H / 2 - menuCamY;
+
+        const minGX = Math.floor((menuCamX - W / 2) / STRIDE) - 2;
+        const maxGX = Math.ceil((menuCamX + W / 2) / STRIDE) + 2;
+        const minGY = Math.floor((menuCamY - H / 2) / STRIDE) - 2;
+        const maxGY = Math.ceil((menuCamY + H / 2) / STRIDE) + 2;
+
+        // Draw grid cells with soft colors
+        for (let gy = minGY; gy <= maxGY; gy++) {
+            for (let gx = minGX; gx <= maxGX; gx++) {
+                const sx = gx * STRIDE + ox;
+                const sy = gy * STRIDE + oy;
+                if (sx + CELL < -10 || sx > W + 10 || sy + CELL < -10 || sy > H + 10) continue;
+
+                const cellColor = getCellColor(gx, gy);
+
+                // Vignette from center
+                const scx = sx + CELL / 2 - W / 2, scy = sy + CELL / 2 - H / 2;
+                const sDist = Math.sqrt(scx * scx + scy * scy);
+                const vigR = Math.min(W, H) * 0.65;
+                const vig = Math.max(0.05, 1 - Math.pow(sDist / vigR, 1.8));
+
+                // Gentle breathing effect per cell
+                const breath = 0.5 + Math.sin(now * 0.0008 + gx * 0.7 + gy * 0.5) * 0.25;
+
+                const rgb = hex2rgb(COLORS[cellColor]);
+                const intensity = 0.25 * vig * breath;
+                const r = Math.round(rgb.r * intensity);
+                const g = Math.round(rgb.g * intensity);
+                const b = Math.round(rgb.b * intensity);
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                rr(ctx, sx, sy, CELL, CELL, CELL_R);
+                ctx.fill();
+            }
+        }
+
+        // Spawn ambient particles
+        if (menuParticles.length < MENU_PARTICLE_MAX && Math.random() < 0.15) {
+            spawnMenuParticle();
+        }
+
+        // Update and draw menu particles
+        const dt = 0.016; // ~60fps
+        for (let i = menuParticles.length - 1; i >= 0; i--) {
+            const p = menuParticles[i];
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.life -= dt;
+            if (p.life <= 0 || p.y < -20) {
+                menuParticles.splice(i, 1);
+                continue;
+            }
+            const a = Math.min(1, p.life / p.maxLife) * 0.4;
+            ctx.globalAlpha = a;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Subtle radial gradient overlay for depth
+        const grd = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.7);
+        grd.addColorStop(0, 'rgba(5,5,7,0)');
+        grd.addColorStop(0.7, 'rgba(5,5,7,0.3)');
+        grd.addColorStop(1, 'rgba(5,5,7,0.7)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    // ============================================================
     //  RENDER
     // ============================================================
     function render(now) {
         ctx.clearRect(0, 0, W, H);
+
+        // Subtle radial background gradient (adds depth)
+        const bgGrd = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.6);
+        bgGrd.addColorStop(0, '#0a0a0f');
+        bgGrd.addColorStop(1, '#050507');
+        ctx.fillStyle = bgGrd;
+        ctx.fillRect(0, 0, W, H);
 
         const ox = W / 2 - camX + shakeX;
         const oy = H / 2 - camY + shakeY;
@@ -1827,12 +2081,32 @@
                 const sDist = Math.sqrt(scx * scx + scy * scy);
                 const vig = Math.max(0.1, 1 - Math.pow(sDist / vigR, 2));
 
+                // Edge fade — cells near viewport edge fade in smoothly
+                const edgeMargin = CELL * 2;
+                const edgeFade = Math.min(1,
+                    Math.min(sx + CELL, W - sx, sy + CELL, H - sy) / edgeMargin
+                );
+                const ef = Math.max(0, Math.min(1, edgeFade));
+
                 if (isTrail) {
-                    const a = (0.06 + reveal3 * 0.14) * vig;
-                    ctx.fillStyle = hexA(COLORS[cellColor], a);
+                    // Check if this is a recent trail cell for enhanced glow
+                    const cellKey = gx + ',' + gy;
+                    const recentIdx = recentTrail.indexOf(cellKey);
+                    const isRecent = recentIdx >= 0;
+                    const recentFade = isRecent ? (recentIdx + 1) / recentTrail.length : 0;
+
+                    const baseA = (0.06 + reveal3 * 0.14) * vig * ef;
+                    const recentBoost = isRecent ? recentFade * 0.15 * vig * ef : 0;
+                    ctx.fillStyle = hexA(COLORS[cellColor], baseA + recentBoost);
                     rr(ctx, sx, sy, CELL, CELL, CELL_R); ctx.fill();
-                    if (reveal3 > 0.15) {
-                        ctx.strokeStyle = hexA(COLORS[cellColor], 0.06 * reveal3);
+
+                    // Border glow on recent trail
+                    if (isRecent && reveal3 > 0.1) {
+                        ctx.strokeStyle = hexA(COLORS[cellColor], recentFade * 0.2 * vig * ef);
+                        ctx.lineWidth = 1.5;
+                        rr(ctx, sx - 1, sy - 1, CELL + 2, CELL + 2, CELL_R + 1); ctx.stroke();
+                    } else if (reveal3 > 0.15) {
+                        ctx.strokeStyle = hexA(COLORS[cellColor], 0.06 * reveal3 * ef);
                         ctx.lineWidth = 1;
                         rr(ctx, sx, sy, CELL, CELL, CELL_R); ctx.stroke();
                     }
@@ -1841,15 +2115,16 @@
                     const base = checker ? 17 : 11;
                     const rgb = hex2rgb(COLORS[cellColor]);
                     const blend = reveal3 * 0.6;
-                    const r = Math.round((base + (rgb.r - base) * blend) * vig);
-                    const g = Math.round((base + (rgb.g - base) * blend) * vig);
-                    const b = Math.round((base + (rgb.b - base) * blend) * vig);
+                    const vigEf = vig * ef;
+                    const r = Math.round((base + (rgb.r - base) * blend) * vigEf);
+                    const g = Math.round((base + (rgb.g - base) * blend) * vigEf);
+                    const b = Math.round((base + (rgb.b - base) * blend) * vigEf);
                     ctx.fillStyle = `rgb(${r},${g},${b})`;
                     rr(ctx, sx, sy, CELL, CELL, CELL_R); ctx.fill();
 
                     // Matching-color cells glow hint
                     if (cellColor === playerColor && reveal3 > 0.2 && dist < 2.8) {
-                        const glowA = 0.08 * reveal3;
+                        const glowA = 0.08 * reveal3 * ef;
                         ctx.fillStyle = hexA(COLORS[cellColor], glowA);
                         rr(ctx, sx - 3, sy - 3, CELL + 6, CELL + 6, CELL_R + 3); ctx.fill();
                     }
@@ -2029,7 +2304,12 @@
 
         if (screenFlash > 0) screenFlash = Math.max(0, screenFlash - dt * 5);
 
-        render(now);
+        // Render menu background when not in gameplay, otherwise normal render
+        if (!gameRunning && !dying && (startScreen.style.display !== 'none' || gameOverScreen.style.display !== 'none')) {
+            renderMenuBG(now);
+        } else {
+            render(now);
+        }
         requestAnimationFrame(loop);
     }
 
@@ -2074,6 +2354,8 @@
         const isNewCell = !trail.has(destKey);
 
         trail.add(playerGX + ',' + playerGY);
+        recentTrail.push(playerGX + ',' + playerGY);
+        if (recentTrail.length > RECENT_TRAIL_MAX) recentTrail.shift();
         playerGX = nx; playerGY = ny;
         moveCount++;
 
@@ -2263,8 +2545,7 @@
             const isNew = score > bestScore;
             if (isNew) { bestScore = score; cgSet('cs3_best', bestScore); cgHappyTime(); }
 
-            finalScoreEl.textContent = score;
-            finalScoreEl.style.color = COLORS[playerColor];
+            animateScoreCountUp(score, COLORS[playerColor]);
             bestScoreTextEl.textContent = 'Best: ' + bestScore;
             newBestEl.style.display = isNew ? 'block' : 'none';
             deathMsgEl.textContent = 'Wrong color!';
@@ -2291,9 +2572,39 @@
 
             renderLeaderboard(-1); // show existing
 
-            // Show ad, then game over screen
+            // Show game over screen
             gameOverScreen.style.display = 'flex';
+            startMenuDrone();
         }, 1000);
+    }
+
+    // ============================================================
+    //  SCORE COUNT-UP ANIMATION
+    // ============================================================
+    let countUpRAF = null;
+
+    function animateScoreCountUp(target, color) {
+        if (countUpRAF) cancelAnimationFrame(countUpRAF);
+        const duration = Math.min(800, 300 + target * 2); // 0.3s - 0.8s
+        const startTime = performance.now();
+        finalScoreEl.textContent = '0';
+        finalScoreEl.style.color = color;
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(1, elapsed / duration);
+            // Ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(eased * target);
+            finalScoreEl.textContent = current;
+            if (progress < 1) {
+                countUpRAF = requestAnimationFrame(step);
+            } else {
+                finalScoreEl.textContent = target;
+                countUpRAF = null;
+            }
+        }
+        countUpRAF = requestAnimationFrame(step);
     }
 
     // ============================================================
@@ -2312,6 +2623,11 @@
     function startGame() {
         saveScoreIfNeeded();
         initAudio();
+
+        // Flash transition effect
+        screenFlash = 1.2;
+        screenFlashColor = '#4d96ff';
+
         score = 0; level = 1; lives = 3; moveCount = 0;
         combo = 0; maxCombo = 0; availableColors = 3;
         cycleTime = BASE_CYCLE; gameTime = 0;
@@ -2323,7 +2639,7 @@
         shakeX = 0; shakeY = 0; shakeDecay = 0;
         hintVisible = true; hintEl.style.opacity = '1';
 
-        cellMap.clear(); trail.clear();
+        cellMap.clear(); trail.clear(); recentTrail.length = 0;
 
         scoreEl.textContent = '0';
         levelEl.textContent = 'Level 1';
@@ -2375,8 +2691,10 @@
 
         gameRunning = true;
         pauseBtn.style.display = 'flex';
+        stopMenuDrone();
         startDrone();
         startHeartbeat();
+        sndGameStart();
         cgGameplayStart();
     }
 
@@ -2465,6 +2783,7 @@
     updateColorUI();
     genNextColors();
     renderLeaderboard(-1);
+    updateMenuBest();
     cgLoadingStop();
     requestAnimationFrame(loop);
 })();
