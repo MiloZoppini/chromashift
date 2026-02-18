@@ -1813,7 +1813,7 @@
     };
     const MODE_INSTRUCTIONS = {
         arcade: 'Your square <strong>changes color</strong> automatically.<br>You can only move on cells <strong>matching your color</strong>.<br>Wrong color = <strong>lose a life</strong>.<br>Survive as long as you can.',
-        sprint: '<strong>60 seconds</strong> on the clock. Score as much as you can!<br>Wrong color = <strong>0.5s freeze</strong> + combo reset.<br><strong>No lives</strong> — time is your only enemy.<br>Same combo multiplier. Go fast!',
+        sprint: '<strong>60 seconds</strong> on the clock. Score as much as you can!<br>Wrong color = <strong>-10% score</strong> + freeze + combo reset.<br><strong>No lives</strong> — time is your only enemy.<br>Go fast, stay accurate!',
     };
 
     const menuBestEl = document.getElementById('menu-best');
@@ -1887,14 +1887,26 @@
     }
 
     // --- SPRINT functions ---
-    function sprintHurt() {
-        // Freeze player for 0.5s + reset combo
+    function sprintHurt(tx, ty) {
+        // Deduct points + freeze + reset combo
+        const penalty = Math.max(1, Math.ceil(score * 0.1)); // lose 10% of score (min 1)
+        score = Math.max(0, score - penalty);
+        scoreEl.textContent = score;
+
         sprintFrozen = true;
         sprintFreezeEnd = performance.now() + SPRINT_FREEZE_TIME;
         combo = 0;
         comboText.classList.remove('visible');
         freezeFlash.classList.add('active');
         shakeDecay = 0.5;
+        screenFlash = 0.6; screenFlashColor = '#ff2244';
+
+        // Show penalty float
+        const wx = tx * STRIDE + CELL / 2;
+        const wy = ty * STRIDE + CELL / 2;
+        spawnP(wx, wy, '#ff2244', 10, 0.7);
+        spawnFloat('-' + penalty, wx, wy - CELL / 2, '#ff6b6b');
+
         sndHurt();
         playerScaleTarget = 0.7;
         setTimeout(() => { playerScaleTarget = 1; }, 180);
@@ -2406,24 +2418,8 @@
     // ============================================================
     //  MENU BACKGROUND — Vivid animated grid + floating orbs
     // ============================================================
-    let menuParticles = [];
-    const MENU_PARTICLE_MAX = 60;
     let menuOrbs = [];
     const MENU_ORB_MAX = 8;
-
-    function spawnMenuParticle() {
-        const fromSide = Math.random() < 0.3;
-        menuParticles.push({
-            x: fromSide ? (Math.random() < 0.5 ? -10 : W + 10) : Math.random() * W,
-            y: fromSide ? Math.random() * H : H + 10,
-            vx: fromSide ? (Math.random() * 30 - 15) : (Math.random() - 0.5) * 20,
-            vy: -(15 + Math.random() * 35),
-            size: 2 + Math.random() * 4,
-            color: COLORS[Math.floor(Math.random() * COLORS.length)],
-            life: 3 + Math.random() * 5,
-            maxLife: 3 + Math.random() * 5,
-        });
-    }
 
     function spawnMenuOrb() {
         menuOrbs.push({
@@ -2519,29 +2515,6 @@
                 }
             }
         }
-
-        // === PARTICLES ===
-        if (menuParticles.length < MENU_PARTICLE_MAX && Math.random() < 0.2) spawnMenuParticle();
-
-        for (let i = menuParticles.length - 1; i >= 0; i--) {
-            const p = menuParticles[i];
-            p.x += p.vx * 0.016;
-            p.y += p.vy * 0.016;
-            p.vy *= 0.995;
-            p.life -= 0.016;
-            if (p.life <= 0 || p.y < -20) { menuParticles.splice(i, 1); continue; }
-
-            const a = Math.min(1, p.life / p.maxLife) * 0.7;
-            ctx.globalAlpha = a;
-            ctx.shadowColor = p.color;
-            ctx.shadowBlur = 12;
-            ctx.fillStyle = p.color;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        }
-        ctx.globalAlpha = 1;
 
         // Soft vignette edges
         const grd = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.7);
@@ -2821,9 +2794,9 @@
         if (screenFlash > 0) screenFlash = Math.max(0, screenFlash - dt * 5);
 
         // Render menu background when not in gameplay, otherwise normal render
-        if (!gameRunning && !dying) {
-            renderMenuBG(now);
-        } else if (countdownActive) {
+        if (countdownActive) {
+            render(now); // show actual gameplay grid during countdown
+        } else if (!gameRunning && !dying) {
             renderMenuBG(now);
         } else {
             render(now);
@@ -2860,7 +2833,7 @@
 
         if (targetColor !== playerColor) {
             if (gameMode === 'sprint') {
-                sprintHurt();
+                sprintHurt(nx, ny);
                 return;
             }
             hurt(nx, ny);
@@ -3361,6 +3334,7 @@
 
         // Show tutorial on first play, then countdown
         stopMenuDrone();
+        cycleStart = performance.now(); // init so ring looks full during countdown
         const launchGame = () => {
             runCountdown(() => {
                 gameRunning = true;
