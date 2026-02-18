@@ -146,27 +146,89 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Staggered entrance for start screen */
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ====== START PANEL (right side, over live grid) ====== */
+        #start-screen {
+            position: fixed; top: 0; right: 0; bottom: 0;
+            width: 380px; z-index: 20;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(3,3,5,0.82);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 30px 28px; gap: 10px;
+            border-left: 1px solid rgba(255,255,255,0.04);
+            box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+            animation: panelSlideIn 0.5s ease-out;
+            overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+
+        @keyframes panelSlideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        #start-screen.hiding {
+            animation: panelSlideOut 0.35s ease-in forwards;
+        }
+
+        @keyframes panelSlideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
         #start-screen > * {
             opacity: 0;
-            animation: slideUp 0.6s ease-out forwards;
+            animation: slideUp 0.5s ease-out forwards;
         }
-        #start-screen > *:nth-child(1) { animation-delay: 0.05s; }
-        #start-screen > *:nth-child(2) { animation-delay: 0.15s; }
-        #start-screen > *:nth-child(3) { animation-delay: 0.25s; }
+        #start-screen > *:nth-child(1) { animation-delay: 0.1s; }
+        #start-screen > *:nth-child(2) { animation-delay: 0.2s; }
+        #start-screen > *:nth-child(3) { animation-delay: 0.3s; }
         #start-screen > *:nth-child(4) { animation-delay: 0.35s; }
-        #start-screen > *:nth-child(5) { animation-delay: 0.45s; }
-        #start-screen > *:nth-child(6) { animation-delay: 0.55s; }
-        #start-screen > *:nth-child(7) { animation-delay: 0.65s; }
-        #start-screen > *:nth-child(8) { animation-delay: 0.7s; }
-        #start-screen > *:nth-child(9) { animation-delay: 0.8s; }
-        #start-screen > *:nth-child(10) { animation-delay: 0.9s; }
+        #start-screen > *:nth-child(5) { animation-delay: 0.4s; }
+        #start-screen > *:nth-child(6) { animation-delay: 0.5s; }
+        #start-screen > *:nth-child(7) { animation-delay: 0.55s; }
+        #start-screen > *:nth-child(8) { animation-delay: 0.6s; }
+        #start-screen > *:nth-child(9) { animation-delay: 0.7s; }
+        #start-screen > *:nth-child(10) { animation-delay: 0.8s; }
 
+        #start-screen h1 {
+            font-size: 36px; font-weight: 900; letter-spacing: 6px; text-transform: uppercase;
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff, #e056a0, #ff6b6b);
+            background-size: 400% 400%;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: slideUp 0.5s ease-out 0.2s forwards, gradShift 4s ease infinite;
+            filter: drop-shadow(0 0 20px rgba(77,150,255,0.15));
+            text-align: center; line-height: 1.1;
+        }
+
+        @keyframes gradShift {
+            0%,100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        #start-screen .subtitle {
+            font-size: 10px; letter-spacing: 8px; text-transform: uppercase;
+            color: rgba(255,255,255,0.25); margin-top: -4px;
+            animation: slideUp 0.5s ease-out 0.3s forwards, subtitlePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes subtitlePulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        #start-screen p {
+            color: rgba(255,255,255,0.35); font-size: 13px; max-width: 340px;
+            text-align: center; line-height: 1.9;
+        }
+
+        #start-screen p strong { color: rgba(255,255,255,0.7); }
+
+        /* Game over overlay stays centered */
         .overlay h1 {
             font-size: 58px; font-weight: 900; letter-spacing: 12px; text-transform: uppercase;
             background: linear-gradient(135deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff, #e056a0, #ff6b6b);
@@ -177,28 +239,43 @@
             filter: drop-shadow(0 0 30px rgba(77,150,255,0.15)) drop-shadow(0 0 60px rgba(224,86,160,0.1));
         }
 
-        @keyframes gradShift {
-            0%,100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
-
-        .overlay .subtitle {
-            font-size: 12px; letter-spacing: 10px; text-transform: uppercase;
-            color: rgba(255,255,255,0.25); margin-top: -2px;
-            animation: subtitlePulse 3s ease-in-out infinite;
-        }
-
-        @keyframes subtitlePulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
         .overlay p {
             color: rgba(255,255,255,0.35); font-size: 14px; max-width: 420px;
             text-align: center; line-height: 2;
         }
 
         .overlay p strong { color: rgba(255,255,255,0.7); }
+
+        /* ====== COUNTDOWN ====== */
+        #countdown {
+            position: fixed; inset: 0;
+            display: none; justify-content: center; align-items: center;
+            z-index: 22; pointer-events: none;
+        }
+
+        #countdown-text {
+            font-size: 120px; font-weight: 900; letter-spacing: 4px;
+            color: #fff; text-shadow: 0 0 60px rgba(77,150,255,0.5), 0 0 120px rgba(77,150,255,0.2);
+            animation: countPop 0.7s ease-out;
+        }
+
+        @keyframes countPop {
+            0% { transform: scale(2.5); opacity: 0; }
+            30% { transform: scale(0.9); opacity: 1; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        #countdown-text.go {
+            font-size: 80px; letter-spacing: 15px;
+            background: linear-gradient(135deg, #6bcb77, #4d96ff, #ffd93d);
+            background-size: 400% 400%;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: countPop 0.7s ease-out, gradShift 2s ease infinite;
+            text-shadow: none;
+            filter: drop-shadow(0 0 30px rgba(107,203,119,0.4));
+        }
 
         .btn {
             margin-top: 18px; padding: 18px 56px;
@@ -549,6 +626,142 @@
         #menu-btn { border-color: rgba(255,107,107,0.15) !important; }
         #menu-btn:hover { border-color: rgba(255,107,107,0.4) !important; }
 
+        /* ====== ACHIEVEMENT TOAST ====== */
+        #achievement-toast {
+            position: fixed; top: -80px; left: 50%; transform: translateX(-50%);
+            z-index: 30; pointer-events: none;
+            background: linear-gradient(135deg, rgba(20,20,30,0.95), rgba(10,10,18,0.95));
+            border: 1px solid rgba(255,215,0,0.25);
+            border-radius: 14px; padding: 12px 24px;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 30px rgba(255,215,0,0.1);
+            transition: top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            white-space: nowrap;
+        }
+        #achievement-toast.show { top: 24px; }
+
+        #achievement-toast .ach-icon {
+            font-size: 28px; flex-shrink: 0;
+        }
+        #achievement-toast .ach-info { display: flex; flex-direction: column; gap: 2px; }
+        #achievement-toast .ach-label {
+            font-size: 8px; letter-spacing: 3px; text-transform: uppercase;
+            color: rgba(255,215,0,0.6);
+        }
+        #achievement-toast .ach-name {
+            font-size: 13px; font-weight: 700; color: #ffd700;
+            letter-spacing: 0.5px;
+        }
+
+        /* ====== TUTORIAL OVERLAY ====== */
+        #tutorial-overlay {
+            position: fixed; inset: 0; z-index: 25;
+            display: none; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+        }
+        #tutorial-overlay.active { display: flex; }
+
+        #tutorial-card {
+            background: rgba(10,10,15,0.95);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px; padding: 36px 40px;
+            text-align: center; max-width: 360px; width: 90%;
+            box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+            animation: tutFadeIn 0.4s ease-out;
+        }
+
+        @keyframes tutFadeIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        #tutorial-card .tut-icon {
+            font-size: 48px; margin-bottom: 16px;
+            animation: tutBounce 1.5s ease-in-out infinite;
+        }
+
+        @keyframes tutBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        #tutorial-card .tut-arrows {
+            display: flex; gap: 8px; justify-content: center; margin-bottom: 16px;
+        }
+        #tutorial-card .tut-arrows span {
+            width: 40px; height: 40px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: #fff;
+            animation: tutKeyPulse 2s ease-in-out infinite;
+        }
+        #tutorial-card .tut-arrows span:nth-child(1) { animation-delay: 0s; }
+        #tutorial-card .tut-arrows span:nth-child(2) { animation-delay: 0.2s; }
+        #tutorial-card .tut-arrows span:nth-child(3) { animation-delay: 0.4s; }
+        #tutorial-card .tut-arrows span:nth-child(4) { animation-delay: 0.6s; }
+
+        @keyframes tutKeyPulse {
+            0%, 100% { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); }
+            50% { border-color: rgba(77,150,255,0.5); background: rgba(77,150,255,0.15); }
+        }
+
+        #tutorial-card h2 {
+            font-size: 18px; font-weight: 700; color: #fff;
+            letter-spacing: 1px; margin-bottom: 10px;
+        }
+
+        #tutorial-card p {
+            font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.6;
+            letter-spacing: 0.5px; margin-bottom: 20px;
+        }
+
+        #tutorial-card .tut-color-demo {
+            display: flex; gap: 6px; justify-content: center; margin-bottom: 16px;
+        }
+        #tutorial-card .tut-color-demo span {
+            width: 32px; height: 32px; border-radius: 6px;
+            animation: tutColorFade 3s ease-in-out infinite;
+        }
+        @keyframes tutColorFade {
+            0%, 100% { opacity: 0.4; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .tut-next-btn {
+            background: linear-gradient(135deg, #4d96ff, #3a7bd5);
+            border: none; border-radius: 10px; padding: 12px 36px;
+            color: #fff; font-family: inherit; font-size: 13px; font-weight: 600;
+            letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .tut-next-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(77,150,255,0.4); }
+
+        .tut-dots {
+            display: flex; gap: 6px; justify-content: center; margin-top: 16px;
+        }
+        .tut-dots span {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: rgba(255,255,255,0.15); transition: all 0.3s;
+        }
+        .tut-dots span.active { background: #4d96ff; transform: scale(1.3); }
+
+        #tutorial-card .tut-timer-demo {
+            width: 60%; height: 6px; margin: 0 auto 16px; border-radius: 3px;
+            background: rgba(255,255,255,0.1); overflow: hidden;
+        }
+        #tutorial-card .tut-timer-bar {
+            height: 100%; border-radius: 3px;
+            background: linear-gradient(90deg, #4d96ff, #ff6b6b);
+            animation: tutTimerShrink 3s ease-in-out infinite;
+        }
+        @keyframes tutTimerShrink {
+            0% { width: 100%; }
+            80% { width: 10%; }
+            100% { width: 100%; }
+        }
+
         /* ====== MOBILE RESPONSIVE ====== */
         @media (max-width: 768px), (pointer: coarse) {
             #mobile-dpad { display: block; }
@@ -574,10 +787,34 @@
                 bottom: calc(20px + env(safe-area-inset-bottom, 0px));
                 left: 20px; transform: none;
             }
+            /* Start panel: full-width bottom sheet on mobile */
+            #start-screen {
+                top: auto; right: 0; bottom: 0; left: 0;
+                width: 100%; height: auto; max-height: 75vh;
+                border-left: none; border-top: 1px solid rgba(255,255,255,0.04);
+                box-shadow: 0 -20px 60px rgba(0,0,0,0.5);
+                padding: 24px 20px 30px;
+                gap: 8px; border-radius: 20px 20px 0 0;
+                animation: panelSlideUpMobile 0.5s ease-out;
+            }
+            @keyframes panelSlideUpMobile {
+                from { transform: translateY(100%); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            #start-screen.hiding { animation: panelSlideDownMobile 0.35s ease-in forwards; }
+            @keyframes panelSlideDownMobile {
+                from { transform: translateY(0); opacity: 1; }
+                to { transform: translateY(100%); opacity: 0; }
+            }
+            #start-screen h1 { font-size: 26px; letter-spacing: 4px; }
+            #start-screen .subtitle { font-size: 8px; letter-spacing: 5px; }
+            #start-screen p { font-size: 11px; line-height: 1.7; }
+            #menu-cube { width: 36px; height: 36px; border-radius: 9px; margin: 4px 0; }
+            #countdown-text { font-size: 80px; }
+            #countdown-text.go { font-size: 50px; }
             /* Overlays */
             .overlay { gap: 10px; padding: 20px; }
             .overlay h1 { font-size: 32px; letter-spacing: 6px; }
-            .overlay .subtitle { font-size: 9px; letter-spacing: 5px; }
             .overlay p { font-size: 12px; max-width: 90vw; line-height: 1.8; }
             .btn { padding: 14px 36px; font-size: 13px; letter-spacing: 3px; }
             /* Game Over screen */
@@ -737,25 +974,43 @@
 
 <div id="hint-text">Arrows or WASD &mdash; move only on cells matching your color</div>
 
-<div class="overlay" id="start-screen">
+<div id="start-screen">
     <div id="menu-cube"></div>
-    <h1>ChromaShift</h1>
+    <h1>Chroma<br>Shift</h1>
     <div class="subtitle">color survival</div>
     <div class="menu-divider"></div>
     <p id="mode-instructions">
         Your square <strong>changes color</strong> automatically.<br>
-        You can only move on cells <strong>matching your color</strong>.<br>
-        Wrong color = <strong>lose a life</strong>.<br>
-        Survive as long as you can.
+        Move on cells <strong>matching your color</strong>.<br>
+        Wrong color = <strong>lose a life</strong>.
     </p>
     <div class="mode-select">
         <button class="mode-btn selected" id="mode-arcade" data-mode="arcade">Arcade</button>
         <button class="mode-btn" id="mode-sprint" data-mode="sprint">Rush</button>
     </div>
     <div class="mode-desc" id="mode-desc">Survive as long as you can</div>
-    <div id="menu-best" style="font-size:11px; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.2); margin-top:6px;"></div>
+    <div id="menu-best" style="font-size:11px; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.2); margin-top:4px;"></div>
+    <div id="menu-achievements" style="font-size:10px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,215,0,0.25); margin-top:2px;">🏆 0 / 16</div>
     <button class="btn" id="start-btn">Play</button>
-    <div style="font-size:9px; letter-spacing:3px; color:rgba(255,255,255,0.1); margin-top:20px; text-transform:uppercase;">v1.0</div>
+    <div style="font-size:9px; letter-spacing:3px; color:rgba(255,255,255,0.08); margin-top:12px; text-transform:uppercase;">v1.0</div>
+</div>
+
+<div id="countdown">
+    <div id="countdown-text"></div>
+</div>
+
+<div id="achievement-toast">
+    <div class="ach-icon" id="ach-icon">🏆</div>
+    <div class="ach-info">
+        <span class="ach-label">Achievement</span>
+        <span class="ach-name" id="ach-name"></span>
+    </div>
+</div>
+
+<div id="tutorial-overlay">
+    <div id="tutorial-card">
+        <!-- Steps filled by JS -->
+    </div>
 </div>
 
 <div class="overlay" id="game-over" style="display:none;">
@@ -1374,6 +1629,153 @@
         menuDroneNodes = [];
     }
 
+    // ---- PROCEDURAL BACKGROUND MUSIC ----
+    let musicInterval = null;
+    let musicBeat = 0;
+    const MUSIC_BPM = 128;
+    const MUSIC_BEAT_MS = 60000 / MUSIC_BPM;
+
+    // Pentatonic scale frequencies for different octaves (C minor pentatonic)
+    const M_SCALE = [
+        // octave 3
+        130.81, 155.56, 174.61, 196.00, 233.08,
+        // octave 4
+        261.63, 311.13, 349.23, 392.00, 466.16,
+        // octave 5
+        523.25, 622.25, 698.46, 783.99, 932.33
+    ];
+    const BASS_NOTES = [65.41, 77.78, 87.31, 98.00]; // C2, Eb2, F2, G2
+
+    function startMusic() {
+        if (!ac || muted || musicInterval) return;
+        musicBeat = 0;
+
+        musicInterval = setInterval(() => {
+            if (!ac || muted || !gameRunning || gamePaused) return;
+            const t = ac.currentTime;
+            const bar = Math.floor(musicBeat / 16); // 4 beats x 4 subdivisions
+            const beatInBar = musicBeat % 16;
+
+            // ---- Bass line: plays on beat 0, 4, 8, 12 of each bar ----
+            if (beatInBar % 4 === 0) {
+                const bassIdx = bar % BASS_NOTES.length;
+                const bassFreq = BASS_NOTES[bassIdx];
+                const bo = ac.createOscillator();
+                bo.type = 'triangle';
+                bo.frequency.setValueAtTime(bassFreq, t);
+                bo.frequency.exponentialRampToValueAtTime(bassFreq * 0.98, t + 0.15);
+                const bg = ac.createGain();
+                bg.gain.setValueAtTime(0.045, t);
+                bg.gain.setValueAtTime(0.045, t + 0.08);
+                bg.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+                bo.connect(bg); bg.connect(dryGain);
+                bo.start(t); bo.stop(t + 0.2);
+
+                // Sub bass layer
+                const so = ac.createOscillator();
+                so.type = 'sine';
+                so.frequency.value = bassFreq * 0.5;
+                const sg = ac.createGain();
+                sg.gain.setValueAtTime(0.05, t);
+                sg.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                so.connect(sg); sg.connect(dryGain);
+                so.start(t); so.stop(t + 0.16);
+            }
+
+            // ---- Arpeggio: sixteenth notes ----
+            {
+                // Pattern evolves based on bar
+                const patterns = [
+                    [0,2,4,7, 4,2,0,2, 4,7,9,7, 4,2,0,2],
+                    [2,4,7,9, 7,4,2,4, 7,9,12,9, 7,4,2,0],
+                    [4,7,9,12, 9,7,4,7, 9,12,14,12, 9,7,4,2],
+                    [0,4,7,12, 9,4,0,4, 7,12,9,7, 4,0,2,4],
+                ];
+                const patIdx = bar % patterns.length;
+                const noteIdx = patterns[patIdx][beatInBar];
+                const freq = M_SCALE[Math.min(noteIdx, M_SCALE.length - 1)];
+
+                const ao = ac.createOscillator();
+                ao.type = 'square';
+                ao.frequency.value = freq;
+                const af = ac.createBiquadFilter();
+                af.type = 'lowpass';
+                af.frequency.value = 1200 + Math.sin(musicBeat * 0.05) * 600;
+                af.Q.value = 2;
+                const ag = ac.createGain();
+                // Accent on beat 0, 4, 8, 12
+                const accent = (beatInBar % 4 === 0) ? 0.028 : 0.018;
+                ag.gain.setValueAtTime(accent, t);
+                ag.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+                ao.connect(af); af.connect(ag); send(ag);
+                ao.start(t); ao.stop(t + 0.09);
+            }
+
+            // ---- Hi-hat pattern ----
+            if (beatInBar % 2 === 0 || (beatInBar % 4 === 3 && bar % 2 === 1)) {
+                const bufLen = Math.floor(ac.sampleRate * 0.03);
+                const buf = ac.createBuffer(1, bufLen, ac.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+                const src = ac.createBufferSource();
+                src.buffer = buf;
+                const hf = ac.createBiquadFilter();
+                hf.type = 'highpass';
+                hf.frequency.value = 8000;
+                const hg = ac.createGain();
+                const vol = (beatInBar % 4 === 0) ? 0.04 : 0.025;
+                hg.gain.setValueAtTime(vol, t);
+                hg.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+                src.connect(hf); hf.connect(hg); hg.connect(dryGain);
+                src.start(t); src.stop(t + 0.035);
+            }
+
+            // ---- Melodic phrase every 2 bars ----
+            if (beatInBar === 0 && bar % 2 === 0) {
+                const melodies = [
+                    [9, 7, 4, 2],
+                    [7, 9, 12, 9],
+                    [4, 7, 9, 14],
+                    [12, 9, 7, 4],
+                ];
+                const mel = melodies[Math.floor(bar / 2) % melodies.length];
+                mel.forEach((ni, i) => {
+                    const delay = i * MUSIC_BEAT_MS / 1000 * 0.5;
+                    const freq = M_SCALE[Math.min(ni, M_SCALE.length - 1)];
+                    const mo = ac.createOscillator();
+                    mo.type = 'sine';
+                    mo.frequency.value = freq;
+                    const mg = ac.createGain();
+                    mg.gain.setValueAtTime(0, t + delay);
+                    mg.gain.linearRampToValueAtTime(0.022, t + delay + 0.02);
+                    mg.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.3);
+                    mo.connect(mg); send(mg);
+                    mo.start(t + delay); mo.stop(t + delay + 0.32);
+                });
+            }
+
+            // ---- Kick on beats 0, 8 ----
+            if (beatInBar === 0 || beatInBar === 8) {
+                const ko = ac.createOscillator();
+                ko.type = 'sine';
+                ko.frequency.setValueAtTime(150, t);
+                ko.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+                const kg = ac.createGain();
+                kg.gain.setValueAtTime(0.06, t);
+                kg.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+                ko.connect(kg); kg.connect(dryGain);
+                ko.start(t); ko.stop(t + 0.13);
+            }
+
+            musicBeat++;
+        }, MUSIC_BEAT_MS / 4); // Sixteenth note resolution
+    }
+
+    function stopMusic() {
+        if (musicInterval) { clearInterval(musicInterval); musicInterval = null; }
+        musicBeat = 0;
+    }
+
     function makeDistCurve(amount) {
         const samples = 256;
         const curve = new Float32Array(samples);
@@ -1391,8 +1793,8 @@
         muted = !muted;
         volBtn.textContent = muted ? '✕' : '♫';
         volBtn.style.color = muted ? '#ff6b6b' : '#333';
-        if (muted) { stopDrone(); stopMenuDrone(); stopHeartbeat(); }
-        else if (gameRunning) { startDrone(); startHeartbeat(); }
+        if (muted) { stopDrone(); stopMusic(); stopMenuDrone(); stopHeartbeat(); }
+        else if (gameRunning) { startDrone(); startMusic(); startHeartbeat(); }
         else { startMenuDrone(); }
     });
 
@@ -1416,10 +1818,16 @@
 
     const menuBestEl = document.getElementById('menu-best');
 
+    const menuAchEl = document.getElementById('menu-achievements');
+
     function updateMenuBest() {
         const key = gameMode === 'sprint' ? 'cs3_best_sprint' : 'cs3_best';
         const best = parseInt(cgGet(key) || '0');
         menuBestEl.textContent = best > 0 ? ('Best: ' + best) : '';
+        // Update achievement count
+        const unlocked = JSON.parse(cgGet('cs3_achievements') || '[]');
+        menuAchEl.textContent = '🏆 ' + unlocked.length + ' / ' + ACHIEVEMENTS.length;
+        menuAchEl.style.color = unlocked.length > 0 ? 'rgba(255,215,0,0.4)' : 'rgba(255,215,0,0.2)';
     }
 
     modeBtns.forEach(btn => {
@@ -1494,7 +1902,7 @@
 
     function sprintGameOver() {
         gameRunning = false;
-        stopDrone(); stopHeartbeat();
+        stopDrone(); stopMusic(); stopHeartbeat();
         modeTimerHud.style.display = 'none';
         pauseBtn.style.display = 'none';
         cgGameplayStop();
@@ -1548,7 +1956,7 @@
         gamePaused = true;
         pauseStartTime = performance.now();
         cgGameplayStop();
-        stopDrone(); stopHeartbeat();
+        stopDrone(); stopMusic(); stopHeartbeat();
         pauseScoreEl.textContent = score;
         pauseScreen.style.display = 'flex';
         pauseBtn.style.display = 'none';
@@ -1564,7 +1972,7 @@
         gamePaused = false;
         pauseScreen.style.display = 'none';
         pauseBtn.style.display = 'flex';
-        if (!muted) { startDrone(); startHeartbeat(); }
+        if (!muted) { startDrone(); startMusic(); startHeartbeat(); }
         cgGameplayStart();
     }
 
@@ -1573,12 +1981,24 @@
         gameRunning = false;
         dying = false;
         cgGameplayStop();
-        stopDrone(); stopHeartbeat();
+        stopDrone(); stopMusic(); stopHeartbeat();
         pauseScreen.style.display = 'none';
         pauseBtn.style.display = 'none';
         modeTimerHud.style.display = 'none';
         freezeFlash.classList.remove('active');
+        gameOverScreen.style.display = 'none';
+        // Show panel with slide-in animation
         startScreen.style.display = 'flex';
+        startScreen.classList.remove('hiding');
+        startScreen.style.animation = 'none';
+        void startScreen.offsetWidth;
+        startScreen.style.animation = '';
+        // Re-trigger child stagger animations
+        startScreen.querySelectorAll(':scope > *').forEach(el => {
+            el.style.animation = 'none';
+            void el.offsetWidth;
+            el.style.animation = '';
+        });
         updateMenuBest();
         startMenuDrone();
     }
@@ -2401,7 +2821,9 @@
         if (screenFlash > 0) screenFlash = Math.max(0, screenFlash - dt * 5);
 
         // Render menu background when not in gameplay, otherwise normal render
-        if (!gameRunning && !dying && (startScreen.style.display !== 'none' || gameOverScreen.style.display !== 'none')) {
+        if (!gameRunning && !dying) {
+            renderMenuBG(now);
+        } else if (countdownActive) {
             renderMenuBG(now);
         } else {
             render(now);
@@ -2480,6 +2902,9 @@
             scoreEl.textContent = score;
             scoreEl.classList.add('bump');
             setTimeout(() => scoreEl.classList.remove('bump'), 80);
+
+            // Check achievements
+            checkAchievements({ score: score, maxCombo: maxCombo, level: level, moves: moveCount });
 
             // Float text
             const wx2 = playerGX * STRIDE + CELL / 2;
@@ -2625,6 +3050,7 @@
 
         sndDeath();
         stopDrone();
+        stopMusic();
         stopHeartbeat();
 
         const wx = tx * STRIDE + CELL / 2;
@@ -2716,14 +3142,178 @@
         }
     }
 
+    // ============================================================
+    //  ACHIEVEMENT / MILESTONE SYSTEM
+    // ============================================================
+    const ACHIEVEMENTS = [
+        // Score milestones
+        { id: 'score_10',    icon: '⭐',  name: 'First Steps',     check: (s) => s.score >= 10 },
+        { id: 'score_50',    icon: '🌟',  name: 'Getting Warm',    check: (s) => s.score >= 50 },
+        { id: 'score_100',   icon: '💫',  name: 'Century',         check: (s) => s.score >= 100 },
+        { id: 'score_250',   icon: '🔥',  name: 'On Fire',         check: (s) => s.score >= 250 },
+        { id: 'score_500',   icon: '💎',  name: 'Diamond Run',     check: (s) => s.score >= 500 },
+        { id: 'score_1000',  icon: '👑',  name: 'Legendary',       check: (s) => s.score >= 1000 },
+        // Combo milestones
+        { id: 'combo_5',     icon: '🎯',  name: 'Combo Starter',   check: (s) => s.maxCombo >= 5 },
+        { id: 'combo_10',    icon: '⚡',  name: 'Chain Lightning',  check: (s) => s.maxCombo >= 10 },
+        { id: 'combo_20',    icon: '🌈',  name: 'Rainbow Chain',   check: (s) => s.maxCombo >= 20 },
+        { id: 'combo_50',    icon: '🦄',  name: 'Unstoppable',     check: (s) => s.maxCombo >= 50 },
+        // Level milestones
+        { id: 'level_3',     icon: '📈',  name: 'Rising Up',       check: (s) => s.level >= 3 },
+        { id: 'level_5',     icon: '🚀',  name: 'Rocket',          check: (s) => s.level >= 5 },
+        { id: 'level_10',    icon: '🏔️', name: 'Summit',          check: (s) => s.level >= 10 },
+        // Move milestones
+        { id: 'moves_100',   icon: '🏃',  name: 'Marathon Start',  check: (s) => s.moves >= 100 },
+        { id: 'moves_500',   icon: '🗺️', name: 'Explorer',        check: (s) => s.moves >= 500 },
+        // Special
+        { id: 'first_game',  icon: '🎮',  name: 'Welcome!',        check: () => true },
+    ];
+
+    const achToast = document.getElementById('achievement-toast');
+    const achIconEl = document.getElementById('ach-icon');
+    const achNameEl = document.getElementById('ach-name');
+    let achUnlocked = JSON.parse(cgGet('cs3_achievements') || '[]');
+    let achQueue = [];
+    let achShowing = false;
+
+    function checkAchievements(stats) {
+        ACHIEVEMENTS.forEach(ach => {
+            if (achUnlocked.includes(ach.id)) return;
+            if (ach.check(stats)) {
+                achUnlocked.push(ach.id);
+                cgSet('cs3_achievements', JSON.stringify(achUnlocked));
+                achQueue.push(ach);
+            }
+        });
+        if (!achShowing && achQueue.length > 0) showNextAch();
+    }
+
+    function showNextAch() {
+        if (achQueue.length === 0) { achShowing = false; return; }
+        achShowing = true;
+        const ach = achQueue.shift();
+        achIconEl.textContent = ach.icon;
+        achNameEl.textContent = ach.name;
+
+        // Sound
+        if (ac && !muted) {
+            const t = ac.currentTime;
+            [523.25, 659.25, 783.99].forEach((f, i) => {
+                const o = ac.createOscillator();
+                o.type = 'sine'; o.frequency.value = f;
+                const g = ac.createGain();
+                g.gain.setValueAtTime(0.06, t + i * 0.08);
+                g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.08 + 0.3);
+                o.connect(g); send(g);
+                o.start(t + i * 0.08); o.stop(t + i * 0.08 + 0.32);
+            });
+        }
+
+        achToast.classList.add('show');
+        setTimeout(() => {
+            achToast.classList.remove('show');
+            setTimeout(showNextAch, 400);
+        }, 2500);
+    }
+
+    // ============================================================
+    //  FIRST-PLAY TUTORIAL
+    // ============================================================
+    const tutOverlay = document.getElementById('tutorial-overlay');
+    const tutCard = document.getElementById('tutorial-card');
+    let tutorialShown = cgGet('cs3_tutorial_done') === '1';
+    let tutStep = 0;
+
+    const TUTORIAL_STEPS = [
+        {
+            html: `
+                <div class="tut-arrows">
+                    <span>▲</span><span>◀</span><span>▼</span><span>▶</span>
+                </div>
+                <h2>Move Around</h2>
+                <p>Use <strong>arrow keys</strong>, <strong>WASD</strong>, or <strong>swipe</strong> on mobile to move your square across the grid.</p>
+            `
+        },
+        {
+            html: `
+                <div class="tut-color-demo">
+                    <span style="background:#4d96ff; animation-delay:0s;"></span>
+                    <span style="background:#ff6b6b; animation-delay:0.4s;"></span>
+                    <span style="background:#55efc4; animation-delay:0.8s;"></span>
+                    <span style="background:#ffd93d; animation-delay:1.2s;"></span>
+                </div>
+                <h2>Match Your Color</h2>
+                <p>Move <strong>only on cells matching your color</strong>. Landing on a wrong color costs a life! Check the ring at the bottom to see your current color.</p>
+            `
+        },
+        {
+            html: `
+                <div class="tut-icon">⏱️</div>
+                <div class="tut-timer-demo"><div class="tut-timer-bar"></div></div>
+                <h2>Color Changes</h2>
+                <p>Your color <strong>shifts automatically</strong> on a timer. Watch the ring — when it empties, your color changes. Plan your moves ahead!</p>
+            `
+        }
+    ];
+
+    function showTutorial(onComplete) {
+        tutStep = 0;
+        tutOverlay.classList.add('active');
+        renderTutStep(onComplete);
+    }
+
+    function renderTutStep(onComplete) {
+        const step = TUTORIAL_STEPS[tutStep];
+        const dotsHtml = TUTORIAL_STEPS.map((_, i) =>
+            `<span class="${i === tutStep ? 'active' : ''}"></span>`
+        ).join('');
+        const isLast = tutStep === TUTORIAL_STEPS.length - 1;
+
+        tutCard.innerHTML = `
+            ${step.html}
+            <button class="tut-next-btn" id="tut-next">${isLast ? 'Got it!' : 'Next'}</button>
+            <div class="tut-dots">${dotsHtml}</div>
+        `;
+        // Re-trigger card animation
+        tutCard.style.animation = 'none';
+        void tutCard.offsetWidth;
+        tutCard.style.animation = '';
+
+        document.getElementById('tut-next').addEventListener('click', () => {
+            if (isLast) {
+                tutOverlay.classList.remove('active');
+                tutorialShown = true;
+                cgSet('cs3_tutorial_done', '1');
+                if (onComplete) onComplete();
+            } else {
+                tutStep++;
+                renderTutStep(onComplete);
+            }
+        });
+    }
+
+    // Countdown state
+    let countdownActive = false;
+    const countdownEl = document.getElementById('countdown');
+    const countdownTextEl = document.getElementById('countdown-text');
+
     function startGame() {
         saveScoreIfNeeded();
         initAudio();
 
-        // Flash transition effect
-        screenFlash = 1.2;
-        screenFlashColor = '#4d96ff';
+        // Hide game over if visible
+        gameOverScreen.style.display = 'none';
 
+        // Slide out start panel
+        if (startScreen.style.display !== 'none') {
+            startScreen.classList.add('hiding');
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+                startScreen.classList.remove('hiding');
+            }, 350);
+        }
+
+        // Reset game state
         score = 0; level = 1; lives = 3; moveCount = 0;
         combo = 0; maxCombo = 0; availableColors = 3;
         cycleTime = BASE_CYCLE; gameTime = 0;
@@ -2742,35 +3332,21 @@
         comboText.classList.remove('visible');
         updateLivesUI();
 
-        startScreen.style.display = 'none';
-        gameOverScreen.style.display = 'none';
-
-        // Set leaderboard key based on mode and reset stat labels
         LB_KEY = gameMode === 'sprint' ? LB_KEY_SPRINT : LB_KEY_ARCADE;
         document.querySelector('#stats-row .stat:nth-child(2) .stat-label').textContent = 'Level';
         document.querySelector('#stats-row .stat:nth-child(4) .stat-label').textContent = 'Max Mult';
 
         playerColor = getCellColor(0, 0);
         genNextColors();
-        cycleStart = performance.now();
         updateColorUI(); updateNextUI();
 
-        // Reset mode-specific state
-        modeTotalMoves = 0;
-        modeTimeLeft = 0;
-        sprintFrozen = false;
-        sprintFreezeEnd = 0;
-
-        // Reset pause state
-        gamePaused = false;
-        pauseScreen.style.display = 'none';
-
-        // Hide mode HUD by default
+        modeTotalMoves = 0; modeTimeLeft = 0;
+        sprintFrozen = false; sprintFreezeEnd = 0;
+        gamePaused = false; pauseScreen.style.display = 'none';
         modeTimerHud.style.display = 'none';
         freezeFlash.classList.remove('active');
 
         if (gameMode === 'sprint') {
-            // Rush mode: 60s countdown, no lives, wrong = freeze
             modeTimeLeft = SPRINT_DURATION;
             modeTimerLabel.textContent = 'Seconds';
             modeTimerVal.textContent = SPRINT_DURATION;
@@ -2778,20 +3354,71 @@
             modeTimerHud.style.display = 'flex';
             document.getElementById('lives-display').style.display = 'none';
             levelEl.style.display = '';
-
         } else {
-            // Arcade mode
             document.getElementById('lives-display').style.display = 'flex';
             levelEl.style.display = '';
         }
 
-        gameRunning = true;
-        pauseBtn.style.display = 'flex';
+        // Show tutorial on first play, then countdown
         stopMenuDrone();
-        startDrone();
-        startHeartbeat();
-        sndGameStart();
-        cgGameplayStart();
+        const launchGame = () => {
+            runCountdown(() => {
+                gameRunning = true;
+                cycleStart = performance.now();
+                pauseBtn.style.display = 'flex';
+                startDrone();
+                startMusic();
+                startHeartbeat();
+                sndGameStart();
+                cgGameplayStart();
+                checkAchievements({ score: 0, maxCombo: 0, level: 1, moves: 0 });
+            });
+        };
+
+        if (!tutorialShown) {
+            showTutorial(launchGame);
+        } else {
+            launchGame();
+        }
+    }
+
+    function runCountdown(callback) {
+        countdownActive = true;
+        countdownEl.style.display = 'flex';
+        const steps = ['3', '2', '1', 'GO!'];
+        let idx = 0;
+
+        function showStep() {
+            if (idx >= steps.length) {
+                countdownEl.style.display = 'none';
+                countdownActive = false;
+                callback();
+                return;
+            }
+            countdownTextEl.textContent = steps[idx];
+            countdownTextEl.className = steps[idx] === 'GO!' ? 'go' : '';
+            // Re-trigger animation
+            countdownTextEl.style.animation = 'none';
+            void countdownTextEl.offsetWidth;
+            countdownTextEl.style.animation = '';
+
+            // Sound for each step
+            if (ac && !muted) {
+                const t = ac.currentTime;
+                const freq = steps[idx] === 'GO!' ? 880 : 440;
+                const o = ac.createOscillator();
+                o.type = 'sine'; o.frequency.value = freq;
+                const g = ac.createGain();
+                g.gain.setValueAtTime(0.15, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+                o.connect(g); send(g);
+                o.start(t); o.stop(t + 0.2);
+            }
+
+            idx++;
+            setTimeout(showStep, steps[idx - 1] === 'GO!' ? 500 : 650);
+        }
+        setTimeout(showStep, 400); // small delay after panel slides out
     }
 
     // ============================================================
@@ -2810,8 +3437,8 @@
             d:'right', a:'left', s:'down', w:'up', D:'right', A:'left', S:'down', W:'up',
         };
         if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
-        if ((e.key === ' ' || e.key === 'Enter') && !gamePaused &&
-            (gameOverScreen.style.display === 'flex' || startScreen.style.display === 'flex')) {
+        if ((e.key === ' ' || e.key === 'Enter') && !gamePaused && !countdownActive &&
+            (gameOverScreen.style.display === 'flex' || (startScreen.style.display !== 'none' && !startScreen.classList.contains('hiding')))) {
             e.preventDefault(); startGame();
         }
     });
